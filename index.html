@@ -8,38 +8,48 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@photo-sphere-viewer/core@5.5.0/index.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@photo-sphere-viewer/markers-plugin@5.5.0/index.css" />
   <style>
-    html, body { margin: 0; padding: 0; height: 100%; font-family: sans-serif; background: #0b0b0b; color: #fff; overflow: hidden; }
-    #viewer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; background: #000; }
+    html, body { margin: 0; padding: 0; height: 100%; width: 100%; font-family: sans-serif; background: #0b0b0b; color: #fff; overflow: hidden; position: fixed; touch-action: none; }
+    #viewer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; background: #000; touch-action: none; }
 
     #welcome-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #0b0b0b; z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; text-align: center; }
     #welcome-screen h1 { color: #c5a059; font-size: 32px; margin-bottom: 8px; letter-spacing: 2px; }
     #welcome-screen p { color: #aaa; font-size: 14px; margin-bottom: 30px; }
     
-    .btn-gold { background: #c5a059; color: #000; font-size: 16px; padding: 16px 32px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(197,160,89,0.3); transition: 0.2s; text-align: center; }
-    .btn-gold:hover { background: #d4af37; transform: scale(1.05); }
+    .btn-gold { background: #c5a059; color: #000; font-size: 16px; padding: 16px 32px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(197,160,89,0.3); transition: 0.2s; text-align: center; touch-action: manipulation; }
+    .btn-gold:active { transform: scale(0.95); }
     .hidden { display: none !important; }
 
-    #menu-toggle { position: absolute; bottom: 20px; right: 20px; z-index: 50; width: 60px; height: 60px; border-radius: 50%; background: #c5a059; color: #000; border: none; font-size: 24px; font-weight: bold; box-shadow: 0 4px 15px rgba(0,0,0,0.6); cursor: pointer; display: none; align-items: center; justify-content: center; transition: 0.2s; }
+    #menu-toggle { position: absolute; bottom: 20px; right: 20px; z-index: 50; width: 60px; height: 60px; border-radius: 50%; background: #c5a059; color: #000; border: none; font-size: 24px; font-weight: bold; box-shadow: 0 4px 15px rgba(0,0,0,0.6); cursor: pointer; display: none; align-items: center; justify-content: center; transition: 0.2s; touch-action: manipulation; }
     #menu-toggle:active { transform: scale(0.9); }
 
-    #controls-panel { position: absolute; bottom: 90px; right: 20px; width: 280px; background: rgba(20, 20, 20, 0.95); border: 1px solid #2c2c2c; border-radius: 12px; padding: 16px; z-index: 40; display: none; flex-direction: column; gap: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); backdrop-filter: blur(10px); transition: transform 0.2s, opacity 0.2s; }
+    #controls-panel { position: absolute; bottom: 90px; right: 20px; width: 280px; background: rgba(20, 20, 20, 0.95); border: 1px solid #2c2c2c; border-radius: 12px; padding: 16px; z-index: 40; display: none; flex-direction: column; gap: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); backdrop-filter: blur(10px); touch-action: manipulation; }
     #controls-panel.open { display: flex; }
     
     .controls-title { color: #c5a059; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; font-weight: bold; margin-bottom: 4px; border-bottom: 1px solid #333; padding-bottom: 4px; }
-    .btn-outline { background: transparent; border: 1px solid #c5a059 !important; color: #fff; padding: 12px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; width: 100%; box-sizing: border-box; text-align: center; }
+    .btn-outline { background: transparent; border: 1px solid #c5a059 !important; color: #fff; padding: 12px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; width: 100%; box-sizing: border-box; text-align: center; touch-action: manipulation; }
     .btn-outline.ativo { background: rgba(197, 160, 89, 0.3); border: 2px solid #fff !important; }
     
     .link-box { background: #222; color: #fff; font-size: 11px; padding: 10px; border-radius: 6px; border: 1px solid #333; width: 100%; box-sizing: border-box; margin-bottom: 4px; }
     .hidden-input { display: none; }
 
     .custom-marker { width: 20px; height: 20px; background: #c5a059; border: 2px solid #fff; border-radius: 50%; box-shadow: 0 0 10px rgba(197,160,89,0.9); cursor: pointer; }
-    
-    /* A MÁGICA: pointer-events: none deixa o dedo "atravessar" o pontinho para girar a tela */
     .dot-marker { width: 14px; height: 14px; background: #fff; border: 2px solid #c5a059; border-radius: 50%; box-shadow: 0 0 5px #000; pointer-events: none; }
     
-    #aviso-modo { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); background: #c5a059; color: #000; padding: 10px 20px; border-radius: 20px; font-weight: bold; font-size: 13px; z-index: 30; display: none; box-shadow: 0 4px 10px rgba(0,0,0,0.5); white-space: nowrap;}
+    #aviso-modo { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); background: #c5a059; color: #000; padding: 10px 20px; border-radius: 20px; font-weight: bold; font-size: 13px; z-index: 30; display: none; box-shadow: 0 4px 10px rgba(0,0,0,0.5); white-space: nowrap; pointer-events: none; }
     
-    #btn-concluir-poligono { position: absolute; bottom: 90px; left: 50%; transform: translateX(-50%); z-index: 50; background: #4CAF50; color: #fff; padding: 12px 24px; border-radius: 30px; border: none; font-weight: bold; font-size: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); cursor: pointer; display: none; }
+    /* Botões de ação durante o desenho */
+    #action-buttons { position: absolute; bottom: 90px; left: 50%; transform: translateX(-50%); z-index: 60; display: none; gap: 10px; touch-action: manipulation; }
+    .btn-action { color: #fff; padding: 14px 20px; border-radius: 30px; border: none; font-weight: bold; font-size: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.6); cursor: pointer; touch-action: manipulation; white-space: nowrap; }
+    .btn-action:active { transform: scale(0.95); }
+    .btn-undo { background: #ff9800; }
+    .btn-done { background: #4CAF50; }
+    .btn-cancel { background: #f44336; }
+
+    /* Painel de Edição (Aparece ao clicar num item já criado) */
+    #panel-edicao { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); background: rgba(20, 20, 20, 0.95); color: #fff; padding: 16px 24px; border-radius: 12px; border: 1px solid #c5a059; box-shadow: 0 10px 30px rgba(0,0,0,0.8); z-index: 100; display: none; text-align: center; min-width: 200px; backdrop-filter: blur(10px); touch-action: manipulation; }
+    #panel-edicao h3 { margin: 0; font-size: 16px; color: #c5a059; margin-bottom: 10px; }
+    .btn-delete { background: #f44336; color: #fff; border: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; width: 100%; margin-bottom: 8px; touch-action: manipulation; }
+    .btn-close-panel { background: #333; color: #fff; border: none; padding: 8px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; width: 100%; touch-action: manipulation; }
   </style>
 </head>
 <body>
@@ -53,23 +63,31 @@
   <div id="viewer"></div>
   <div id="aviso-modo"></div>
   
-  <button id="btn-concluir-poligono" onclick="finalizarPoligono(event)">✅ Concluir Lote</button>
+  <!-- Botões durante o desenho -->
+  <div id="action-buttons">
+    <button class="btn-action btn-undo" onpointerdown="desfazerPonto(event)">↩️ Desfazer</button>
+    <button class="btn-action btn-done" onpointerdown="finalizarPoligono(event)">✅ Concluir</button>
+    <button class="btn-action btn-cancel" onpointerdown="cancelarDesenho(event)">❌</button>
+  </div>
 
-  <button id="menu-toggle" onclick="toggleMenu(event)">☰</button>
+  <!-- Painel de edição de item selecionado -->
+  <div id="panel-edicao">
+    <h3 id="edit-title">Elemento Selecionado</h3>
+    <button class="btn-delete" onpointerdown="apagarSelecionado(event)">🗑️ Apagar Elemento</button>
+    <button class="btn-close-panel" onpointerdown="fecharPainelEdicao(event)">Fechar</button>
+  </div>
+
+  <button id="menu-toggle" onpointerdown="toggleMenu(event)">☰</button>
 
   <div id="controls-panel">
     <div class="controls-title">Opções do Tour</div>
-    
-    <button class="btn-outline" id="btn-marcar" onclick="toggleModoMarcacao(event)">📍 Adicionar Ponto</button>
-    <button class="btn-outline" id="btn-desenhar" onclick="toggleModoDesenho(event)">✏️ Desenhar Lote</button>
-    
+    <button class="btn-outline" id="btn-marcar" onpointerdown="toggleModoMarcacao(event)">📍 Adicionar Ponto</button>
+    <button class="btn-outline" id="btn-desenhar" onpointerdown="toggleModoDesenho(event)">✏️ Desenhar Lote</button>
     <hr style="border-color:#333; margin:8px 0; width:100%;">
-    
-    <button class="btn-gold" id="btn-salvar" onclick="salvarTour(event)" style="padding:12px; font-size:14px;">💾 Salvar tour</button>
-    
+    <button class="btn-gold" id="btn-salvar" onpointerdown="salvarTour(event)" style="padding:12px; font-size:14px;">💾 Salvar tour</button>
     <p style="font-size:11px; color:#aaa; margin:4px 0;">Link gerado:</p>
     <input type="text" id="linkTour" readonly placeholder="Ainda não salvo" class="link-box">
-    <button class="btn-outline" onclick="copiarLink(event)" style="padding:8px; font-size:12px;">🔗 Copiar link</button>
+    <button class="btn-outline" onpointerdown="copiarLink(event)" style="padding:8px; font-size:12px;">🔗 Copiar link</button>
   </div>
 
   <script type="importmap">
@@ -94,6 +112,7 @@
     let modoDesenho = false;
     let pontosPoligonoAtual = [];
     let tempPolygonId = 'temp_poly';
+    let selectedMarkerId = null;
 
     function iniciarViewer(imagem) {
       if (viewer) viewer.destroy();
@@ -105,21 +124,29 @@
         container: 'viewer',
         panorama: imagem,
         navbar: false,
+        touchmoveTwoFingers: true,
         plugins: [[MarkersPlugin, { markers: [] }]]
       });
 
+      const markersPlugin = viewer.getPlugin(MarkersPlugin);
+
+      // Clique na tela (para desenhar ou adicionar ponto)
       viewer.addEventListener('click', ({ data }) => {
         if (!data || typeof data.yaw === 'undefined') return;
+        
+        // Fecha o painel de edição se estiver aberto
+        fecharPainelEdicao();
+
         const { yaw, pitch } = data;
         
         if (modoPonto) {
           const titulo = prompt('Título da marcação (ex: Portaria):');
           if (titulo) {
             const id = 'marcador_' + Date.now();
-            viewer.getPlugin(MarkersPlugin).addMarker({
+            markersPlugin.addMarker({
               id: id, position: { yaw, pitch }, html: `<div class="custom-marker"></div>`, anchor: 'center center'
             });
-            marcacoes.push({ type: 'ponto', yaw, pitch, titulo });
+            marcacoes.push({ id: id, type: 'ponto', yaw, pitch, titulo });
           }
           desativarModos();
         }
@@ -129,22 +156,33 @@
           atualizarPoligonoTemporario();
         }
       });
+
+      // Clique em um item existente (para apagar)
+      markersPlugin.addEventListener('select-marker', ({ marker }) => {
+        if (modoPonto || modoDesenho) return; // Ignora se estiver no modo de criação
+        
+        selectedMarkerId = marker.id;
+        document.getElementById('panel-edicao').style.display = 'block';
+        
+        if(marker.config.data && marker.config.data.titulo) {
+          document.getElementById('edit-title').innerText = marker.config.data.titulo;
+        } else {
+          document.getElementById('edit-title').innerText = 'Lote Desenhado';
+        }
+      });
     }
 
     function atualizarPoligonoTemporario() {
       const markersPlugin = viewer.getPlugin(MarkersPlugin);
       const pontoAtual = pontosPoligonoAtual[pontosPoligonoAtual.length - 1];
 
-      // Adiciona pontinho visual sem bloquear o toque (pointer-events: none no CSS)
       markersPlugin.addMarker({
         id: 'dot_' + pontosPoligonoAtual.length,
         position: pontoAtual,
         html: '<div class="dot-marker"></div>',
-        anchor: 'center center',
-        tooltip: false
+        anchor: 'center center'
       });
 
-      // Só desenha a área se tiver 3 pontos, com pointer-events none para não travar o giro da tela
       if (pontosPoligonoAtual.length >= 3) {
         if (markersPlugin.getMarker(tempPolygonId)) {
           markersPlugin.updateMarker({ id: tempPolygonId, polygon: pontosPoligonoAtual });
@@ -171,25 +209,22 @@
     });
 
     window.toggleMenu = function(event) {
-      if(event) event.stopPropagation();
+      if(event) { event.preventDefault(); event.stopPropagation(); }
       const panel = document.getElementById('controls-panel');
       const btn = document.getElementById('menu-toggle');
-      if (panel.classList.contains('open')) {
-        panel.classList.remove('open'); btn.innerText = '☰';
-      } else {
-        panel.classList.add('open'); btn.innerText = '✕';
-      }
+      panel.classList.toggle('open');
+      btn.innerText = panel.classList.contains('open') ? '✕' : '☰';
     }
 
     window.toggleModoMarcacao = function(event) {
-      if(event) event.stopPropagation();
+      if(event) { event.preventDefault(); event.stopPropagation(); }
       if (modoDesenho) cancelarDesenho();
       modoPonto = !modoPonto;
       atualizarBotoesUI();
     }
 
     window.toggleModoDesenho = function(event) {
-      if(event) event.stopPropagation();
+      if(event) { event.preventDefault(); event.stopPropagation(); }
       if (modoPonto) desativarModos();
       
       if (modoDesenho) {
@@ -197,18 +232,40 @@
       } else {
         modoDesenho = true;
         pontosPoligonoAtual = [];
-        document.getElementById('btn-concluir-poligono').style.display = 'block';
+        document.getElementById('action-buttons').style.display = 'flex';
         atualizarBotoesUI();
       }
     }
 
+    window.desfazerPonto = function(event) {
+      if(event) { event.preventDefault(); event.stopPropagation(); }
+      if (pontosPoligonoAtual.length > 0) {
+        // Remove o último ponto do array
+        pontosPoligonoAtual.pop();
+        const markersPlugin = viewer.getPlugin(MarkersPlugin);
+        
+        // Remove o pontinho visual correspondente
+        const lastDotId = 'dot_' + (pontosPoligonoAtual.length + 1);
+        if (markersPlugin.getMarker(lastDotId)) {
+          markersPlugin.removeMarker(lastDotId);
+        }
+
+        // Se o polígono temporário ainda existir, atualiza ou remove
+        if (markersPlugin.getMarker(tempPolygonId)) {
+          if (pontosPoligonoAtual.length >= 3) {
+            markersPlugin.updateMarker({ id: tempPolygonId, polygon: pontosPoligonoAtual });
+          } else {
+            markersPlugin.removeMarker(tempPolygonId);
+          }
+        }
+      }
+    }
+
     window.finalizarPoligono = function(event) {
-      // O SEGREDO ESTÁ AQUI: Evita que o clique no botão vaze para a foto
       if(event) { event.preventDefault(); event.stopPropagation(); }
 
       if (pontosPoligonoAtual.length >= 3) {
         const markersPlugin = viewer.getPlugin(MarkersPlugin);
-        
         try {
           const poligonoId = 'lote_' + Date.now();
           markersPlugin.addMarker({
@@ -216,32 +273,50 @@
             polygon: pontosPoligonoAtual,
             svgStyle: { stroke: '#c5a059', strokeWidth: '3px', fill: 'rgba(197, 160, 89, 0.3)', pointerEvents: 'none' }
           });
-          marcacoes.push({ type: 'poligono', polygon: pontosPoligonoAtual });
+          marcacoes.push({ id: poligonoId, type: 'poligono', polygon: pontosPoligonoAtual });
         } catch (e) {
-          console.error(e);
-          alert("Erro ao fechar o lote. As linhas não podem se cruzar.");
+          alert("Erro ao fechar. As linhas não podem se cruzar.");
         } finally {
-          // Limpa tudo e sai do modo desenho, dando certo ou errado
           limparTemporarios();
           desativarModos();
         }
       } else {
-        alert('Você precisa tocar em pelo menos 3 cantos para fechar o lote.');
+        alert('Você precisa de pelo menos 3 pontos.');
       }
+    }
+
+    window.cancelarDesenho = function(event) {
+      if(event) { event.preventDefault(); event.stopPropagation(); }
+      limparTemporarios();
+      desativarModos();
+    }
+
+    window.apagarSelecionado = function(event) {
+      if(event) { event.preventDefault(); event.stopPropagation(); }
+      if (!selectedMarkerId) return;
+
+      const markersPlugin = viewer.getPlugin(MarkersPlugin);
+      markersPlugin.removeMarker(selectedMarkerId);
+      
+      // Remove do array de dados
+      marcacoes = marcacoes.filter(m => m.id !== selectedMarkerId);
+      
+      fecharPainelEdicao();
+    }
+
+    window.fecharPainelEdicao = function(event) {
+      if(event) { event.preventDefault(); event.stopPropagation(); }
+      document.getElementById('panel-edicao').style.display = 'none';
+      selectedMarkerId = null;
     }
 
     function limparTemporarios() {
       const markersPlugin = viewer.getPlugin(MarkersPlugin);
       if(markersPlugin.getMarker(tempPolygonId)) markersPlugin.removeMarker(tempPolygonId);
-      for(let i=1; i <= 20; i++) {
+      for(let i=1; i <= 50; i++) {
         if(markersPlugin.getMarker('dot_' + i)) markersPlugin.removeMarker('dot_' + i);
       }
       pontosPoligonoAtual = [];
-    }
-
-    function cancelarDesenho() {
-      limparTemporarios();
-      desativarModos();
     }
 
     function desativarModos() {
@@ -275,15 +350,15 @@
         btnMarcar.classList.remove('ativo');
         btnDesenhar.classList.remove('ativo');
         aviso.style.display = 'none';
-        document.getElementById('btn-concluir-poligono').style.display = 'none';
+        document.getElementById('action-buttons').style.display = 'none';
       }
     }
 
     window.salvarTour = async function(event) {
-      if(event) event.stopPropagation();
+      if(event) { event.preventDefault(); event.stopPropagation(); }
       const file = document.getElementById('foto').files[0];
       if (!file) return alert('Carregue uma foto primeiro.');
-      if (marcacoes.length === 0) return alert('Adicione pelo menos uma marcação ou lote antes de salvar.');
+      if (marcacoes.length === 0) return alert('Adicione algo antes de salvar.');
 
       const btnSalvar = document.getElementById('btn-salvar');
       btnSalvar.disabled = true;
@@ -310,7 +385,7 @@
     }
 
     window.copiarLink = function(event) {
-      if(event) event.stopPropagation();
+      if(event) { event.preventDefault(); event.stopPropagation(); }
       const input = document.getElementById('linkTour');
       if (!input.value) return alert('Salve o tour primeiro.');
       navigator.clipboard.writeText(input.value);
