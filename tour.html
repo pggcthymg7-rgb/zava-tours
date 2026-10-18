@@ -10,7 +10,22 @@
   <style>
     body { margin: 0; background: #000; font-family: sans-serif; overflow: hidden; }
     #viewer { width: 100vw; height: 100vh; }
+    
     .custom-marker { width: 24px; height: 24px; background: #c5a059; border: 2px solid #fff; border-radius: 50%; box-shadow: 0 0 15px rgba(197,160,89,0.9); cursor: pointer; }
+    
+    .text-marker { 
+      background: rgba(11, 11, 11, 0.85); 
+      color: #c5a059; 
+      border: 1px solid #c5a059; 
+      padding: 6px 12px; 
+      border-radius: 4px; 
+      font-weight: bold; 
+      font-size: 14px; 
+      white-space: nowrap; 
+      cursor: pointer; 
+      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+      backdrop-filter: blur(4px);
+    }
     
     #painel-info { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); background: rgba(20, 20, 20, 0.95); color: #fff; padding: 16px 24px; border-radius: 12px; border: 1px solid #c5a059; box-shadow: 0 10px 30px rgba(0,0,0,0.8); z-index: 1000; display: none; text-align: center; min-width: 200px; backdrop-filter: blur(10px); }
     #painel-info h3 { margin: 0; font-size: 18px; color: #c5a059; }
@@ -67,6 +82,13 @@
                 polyline: m.polyline, 
                 svgStyle: { stroke: '#c5a059', strokeWidth: '4px', pointerEvents: 'none' }
               };
+            } else if (m.type === 'texto') {
+              return {
+                id: 'texto_' + index,
+                position: { yaw: m.yaw, pitch: m.pitch },
+                html: `<div class="text-marker">${m.conteudo}</div>`,
+                anchor: 'center center'
+              };
             } else {
               return {
                 id: 'marcador_' + index,
@@ -86,6 +108,7 @@
 
           const markersPlugin = viewer.getPlugin(MarkersPlugin);
           markersPlugin.addEventListener('select-marker', ({ marker }) => {
+            // Só mostra o painel se for um Ponto (não para textos ou lotes)
             if (marker.config.data && marker.config.data.titulo) {
               document.getElementById('info-titulo').innerText = marker.config.data.titulo;
               document.getElementById('painel-info').style.display = 'block';
