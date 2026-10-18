@@ -23,13 +23,9 @@
     .hidden { display: none; }
     
     .custom-marker { width: 24px; height: 24px; background: #c5a059; border: 2px solid #fff; border-radius: 50%; box-shadow: 0 0 15px rgba(197,160,89,0.9); cursor: pointer; }
-    
-    #erro { position: fixed; top: 0; left: 0; width: 100%; background: red; color: white; padding: 15px; z-index: 9999; display: none; font-weight: bold; text-align: center; }
   </style>
 </head>
 <body>
-  <div id="erro"></div>
-  
   <header><h1>❖ ZAVA TOUR — Editor</h1></header>
   <div class="container">
     <div class="sidebar">
@@ -60,12 +56,6 @@
   <script src="https://cdn.jsdelivr.net/npm/browser-image-compression@2.0.2/dist/browser-image-compression.js"></script>
   
   <script type="module">
-    window.onerror = function(msg) {
-      const e = document.getElementById('erro');
-      e.style.display = 'block';
-      e.innerText = 'Erro no sistema: ' + msg;
-    };
-
     import { Viewer } from '@photo-sphere-viewer/core';
     import { MarkersPlugin } from '@photo-sphere-viewer/markers-plugin';
 
@@ -76,39 +66,34 @@
     function iniciarViewer(imagem) {
       if (viewer) viewer.destroy();
       
-      try {
-        viewer = new Viewer({
-          container: 'viewer',
-          panorama: imagem,
-          plugins: [[MarkersPlugin, { markers: [] }]]
-        });
+      viewer = new Viewer({
+        container: 'viewer',
+        panorama: imagem,
+        navbar: false, // Desativa a barra inferior (evita o erro de tela cheia no iOS)
+        plugins: [[MarkersPlugin, { markers: [] }]]
+      });
 
-        viewer.addEventListener('click', ({ data }) => {
-          if (!modoMarcacao) return;
+      viewer.addEventListener('click', ({ data }) => {
+        if (!modoMarcacao) return;
+        
+        const { yaw, pitch } = data;
+        const titulo = prompt('Título da marcação (ex: Lote 04, Portaria):');
+        
+        if (titulo) {
+          const id = 'marcador_' + Date.now();
+          const markersPlugin = viewer.getPlugin(MarkersPlugin);
           
-          const { yaw, pitch } = data;
-          const titulo = prompt('Título da marcação (ex: Lote 04, Portaria):');
-          
-          if (titulo) {
-            const id = 'marcador_' + Date.now();
-            const markersPlugin = viewer.getPlugin(MarkersPlugin);
-            
-            markersPlugin.addMarker({
-              id: id,
-              position: { yaw, pitch },
-              html: `<div class="custom-marker"></div>`,
-              tooltip: titulo,
-              anchor: 'center center'
-            });
+          markersPlugin.addMarker({
+            id: id,
+            position: { yaw, pitch },
+            html: `<div class="custom-marker"></div>`,
+            anchor: 'center center'
+          });
 
-            marcacoes.push({ yaw, pitch, titulo });
-            desativarModoMarcacao();
-          }
-        });
-      } catch (err) {
-        document.getElementById('erro').style.display = 'block';
-        document.getElementById('erro').innerText = 'Erro ao iniciar visualizador: ' + err.message;
-      }
+          marcacoes.push({ yaw, pitch, titulo });
+          desativarModoMarcacao();
+        }
+      });
     }
 
     iniciarViewer('https://photo-sphere-viewer.js.org/assets/sphere.jpg');
