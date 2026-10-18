@@ -213,7 +213,6 @@
       }
     }
 
-    // A SOLUÇÃO: Usar Polyline (linhas conectadas) em vez de Polygon (área preenchida)
     window.finalizarPoligono = function(event) {
       if(event) { event.stopPropagation(); }
       if (!modoDesenho) return;
@@ -221,26 +220,27 @@
       if (pontosPoligonoAtual.length >= 3) {
         const markersPlugin = viewer.getPlugin(MarkersPlugin);
         
-        // Fecha a forma adicionando o primeiro ponto no final da lista
-        const linhaFechada = [...pontosPoligonoAtual, pontosPoligonoAtual[0]];
-        
         try {
+          // Cria a lista de pontos para a linha e adiciona o primeiro ponto no final para fechar o lote
+          const linePoints = pontosPoligonoAtual.map(p => ({yaw: p.yaw, pitch: p.pitch}));
+          linePoints.push({yaw: pontosPoligonoAtual[0].yaw, pitch: pontosPoligonoAtual[0].pitch}); 
+
           const poligonoId = 'lote_' + Date.now();
           
-          // Desenha apenas o contorno dourado (não trava nunca)
+          // Desenha a linha SEM filtros de sombra que causam erro no iOS
           markersPlugin.addMarker({
             id: poligonoId,
-            polyline: linhaFechada, 
-            svgStyle: { stroke: '#c5a059', strokeWidth: '4px', filter: 'drop-shadow(0px 0px 3px rgba(0,0,0,0.8))' }
+            polyline: linePoints, 
+            svgStyle: { stroke: '#c5a059', strokeWidth: '4px' }
           });
           
-          marcacoes.push({ id: poligonoId, type: 'poligono', polyline: linhaFechada });
+          marcacoes.push({ id: poligonoId, type: 'poligono', polyline: linePoints });
           
           limparTemporarios();
           desativarModos();
         } catch (e) {
+          alert("Erro interno ao desenhar: " + e.message);
           console.error(e);
-          alert("Erro ao desenhar. Tente novamente.");
         }
       } else {
         alert('Você precisa tocar em pelo menos 3 cantos.');
