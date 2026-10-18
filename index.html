@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Zava Tour — Editor</title>
   
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@photo-sphere-viewer/core@5.5.0/index.css" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@photo-sphere-viewer/markers-plugin@5.5.0/index.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@photo-sphere-viewer/core@5.14.2/index.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@photo-sphere-viewer/markers-plugin@5.14.2/index.css" />
   <style>
     html, body { margin: 0; padding: 0; height: 100%; width: 100%; font-family: sans-serif; background: #0b0b0b; color: #fff; overflow: hidden; position: fixed; touch-action: none; }
     #viewer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; background: #000; touch-action: none; }
@@ -96,20 +96,15 @@
       e.style.display = 'block';
       e.innerText = 'Erro no sistema: ' + msg;
     };
-    window.addEventListener('unhandledrejection', function(event) {
-      const e = document.getElementById('erro-global');
-      e.style.display = 'block';
-      e.innerText = 'Erro de conexão: ' + event.reason;
-    });
   </script>
 
   <script type="importmap">
     {
       "imports": {
-        "three": "https://esm.sh/three@0.163.0",
-        "three/addons/": "https://esm.sh/three@0.163.0/examples/jsm/",
-        "@photo-sphere-viewer/core": "https://esm.sh/@photo-sphere-viewer/core@5.5.0",
-        "@photo-sphere-viewer/markers-plugin": "https://esm.sh/@photo-sphere-viewer/markers-plugin@5.5.0"
+        "three": "https://esm.sh/three@0.168.0",
+        "three/addons/": "https://esm.sh/three@0.168.0/examples/jsm/",
+        "@photo-sphere-viewer/core": "https://esm.sh/@photo-sphere-viewer/core@5.14.2",
+        "@photo-sphere-viewer/markers-plugin": "https://esm.sh/@photo-sphere-viewer/markers-plugin@5.14.2"
       }
     }
   </script>
@@ -195,24 +190,34 @@
       document.getElementById('welcome-desc').innerText = 'Aguarde, preparando sua foto.';
       document.getElementById('btn-load').style.display = 'none';
 
-      try {
-        const options = { maxSizeMB: 4, maxWidthOrHeight: 8192, useWebWorker: true };
-        arquivoComprimidoGlobal = await imageCompression(file, options);
+      // Verifica a proporção da imagem para avisar o usuário
+      const img = new Image();
+      img.onload = async function() {
+        const proporcao = img.width / img.height;
+        if (proporcao < 1.9 || proporcao > 2.1) {
+           alert("⚠️ Aviso: A proporção da sua foto não é 2:1 (equiretangular). O horizonte pode parecer arredondado ou deformado. Para um resultado perfeito, exporte a foto do drone no formato panorâmico 360° original.");
+        }
         
-        const reader = new FileReader();
-        reader.onload = function(ev) {
-          iniciarViewer(ev.target.result);
-          marcacoes = [];
-          desativarModos();
-        };
-        reader.readAsDataURL(arquivoComprimidoGlobal);
-      } catch (err) {
-        alert("Erro ao carregar a imagem. Verifique a foto.");
-        console.error(err);
-        document.getElementById('welcome-title').innerText = '❖ ZAVA TOUR';
-        document.getElementById('welcome-desc').innerText = 'Editor de Tour Virtual 360°';
-        document.getElementById('btn-load').style.display = 'inline-block';
-      }
+        try {
+          const options = { maxSizeMB: 4, maxWidthOrHeight: 8192, useWebWorker: true };
+          arquivoComprimidoGlobal = await imageCompression(file, options);
+          
+          const reader = new FileReader();
+          reader.onload = function(ev) {
+            iniciarViewer(ev.target.result);
+            marcacoes = [];
+            desativarModos();
+          };
+          reader.readAsDataURL(arquivoComprimidoGlobal);
+        } catch (err) {
+          alert("Erro ao carregar a imagem.");
+          console.error(err);
+          document.getElementById('welcome-title').innerText = '❖ ZAVA TOUR';
+          document.getElementById('welcome-desc').innerText = 'Editor de Tour Virtual 360°';
+          document.getElementById('btn-load').style.display = 'inline-block';
+        }
+      };
+      img.src = URL.createObjectURL(file);
     });
 
     window.toggleMenu = function(event) {
@@ -251,9 +256,7 @@
         const lastDotId = 'dot_' + pontosPoligonoAtual.length;
         pontosPoligonoAtual.pop();
         try {
-          if (markersPlugin.getMarker(lastDotId)) {
-            markersPlugin.removeMarker(lastDotId);
-          }
+          if (markersPlugin.getMarker(lastDotId)) markersPlugin.removeMarker(lastDotId);
         } catch (e) {}
       }
     }
@@ -271,26 +274,22 @@
 
           const poligonoId = 'lote_' + Date.now();
           
+          // Na versão 5.14, adicionamos pointerEvents: 'none' para não travar a navegação ao tocar na linha
           markersPlugin.addMarker({
             id: poligonoId,
             polyline: linePoints, 
-            svgStyle: { stroke: '#c5a059', strokeWidth: '4px' }
+            svgStyle: { stroke: '#c5a059', strokeWidth: '4px', pointerEvents: 'none' }
           });
           
           marcacoes.push({ id: poligonoId, type: 'poligono', polyline: linePoints });
           
-          // Limpeza segura: conta exatamente quantos pontos foram criados
           const qtdPontos = pontosPoligonoAtual.length;
-          pontosPoligonoAtual = []; // Esvazia a lista
+          pontosPoligonoAtual = []; 
           
           for (let i = 1; i <= qtdPontos; i++) {
              try {
-                if (markersPlugin.getMarker('dot_' + i)) {
-                   markersPlugin.removeMarker('dot_' + i);
-                }
-             } catch(err) {
-                // Ignora se não achar
-             }
+                if (markersPlugin.getMarker('dot_' + i)) markersPlugin.removeMarker('dot_' + i);
+             } catch(err) {}
           }
 
           desativarModos();
@@ -331,9 +330,7 @@
       
       for (let i = 1; i <= qtd; i++) {
         try {
-          if (markersPlugin.getMarker('dot_' + i)) {
-            markersPlugin.removeMarker('dot_' + i);
-          }
+          if (markersPlugin.getMarker('dot_' + i)) markersPlugin.removeMarker('dot_' + i);
         } catch(e) {}
       }
     }
