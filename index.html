@@ -37,7 +37,6 @@
     
     #aviso-modo { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); background: #c5a059; color: #000; padding: 10px 20px; border-radius: 20px; font-weight: bold; font-size: 13px; z-index: 30; display: none; box-shadow: 0 4px 10px rgba(0,0,0,0.5); white-space: nowrap; pointer-events: none; }
     
-    /* Botões de ação durante o desenho */
     #action-buttons { position: absolute; bottom: 90px; left: 50%; transform: translateX(-50%); z-index: 60; display: none; gap: 10px; touch-action: manipulation; }
     .btn-action { color: #fff; padding: 14px 20px; border-radius: 30px; border: none; font-weight: bold; font-size: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.6); cursor: pointer; touch-action: manipulation; white-space: nowrap; }
     .btn-action:active { transform: scale(0.95); }
@@ -45,7 +44,6 @@
     .btn-done { background: #4CAF50; }
     .btn-cancel { background: #f44336; }
 
-    /* Painel de Edição (Aparece ao clicar num item já criado) */
     #panel-edicao { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); background: rgba(20, 20, 20, 0.95); color: #fff; padding: 16px 24px; border-radius: 12px; border: 1px solid #c5a059; box-shadow: 0 10px 30px rgba(0,0,0,0.8); z-index: 100; display: none; text-align: center; min-width: 200px; backdrop-filter: blur(10px); touch-action: manipulation; }
     #panel-edicao h3 { margin: 0; font-size: 16px; color: #c5a059; margin-bottom: 10px; }
     .btn-delete { background: #f44336; color: #fff; border: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; width: 100%; margin-bottom: 8px; touch-action: manipulation; }
@@ -63,14 +61,12 @@
   <div id="viewer"></div>
   <div id="aviso-modo"></div>
   
-  <!-- Botões durante o desenho -->
   <div id="action-buttons">
     <button class="btn-action btn-undo" onpointerdown="desfazerPonto(event)">↩️ Desfazer</button>
     <button class="btn-action btn-done" onpointerdown="finalizarPoligono(event)">✅ Concluir</button>
     <button class="btn-action btn-cancel" onpointerdown="cancelarDesenho(event)">❌</button>
   </div>
 
-  <!-- Painel de edição de item selecionado -->
   <div id="panel-edicao">
     <h3 id="edit-title">Elemento Selecionado</h3>
     <button class="btn-delete" onpointerdown="apagarSelecionado(event)">🗑️ Apagar Elemento</button>
@@ -113,6 +109,7 @@
     let pontosPoligonoAtual = [];
     let tempPolygonId = 'temp_poly';
     let selectedMarkerId = null;
+    let processandoClique = false; // Trava de segurança
 
     function iniciarViewer(imagem) {
       if (viewer) viewer.destroy();
@@ -124,19 +121,16 @@
         container: 'viewer',
         panorama: imagem,
         navbar: false,
-        touchmoveTwoFingers: true,
+        touchmoveTwoFingers: false, // Permite girar com 1 dedo (mobile)
         plugins: [[MarkersPlugin, { markers: [] }]]
       });
 
       const markersPlugin = viewer.getPlugin(MarkersPlugin);
 
-      // Clique na tela (para desenhar ou adicionar ponto)
       viewer.addEventListener('click', ({ data }) => {
-        if (!data || typeof data.yaw === 'undefined') return;
+        if (!data || typeof data.yaw === 'undefined' || processandoClique) return;
         
-        // Fecha o painel de edição se estiver aberto
         fecharPainelEdicao();
-
         const { yaw, pitch } = data;
         
         if (modoPonto) {
@@ -153,13 +147,32 @@
         
         if (modoDesenho) {
           pontosPoligonoAtual.push({ yaw, pitch });
-          atualizarPoligonoTemporario();
+          
+          // Adiciona o pontinho visual
+          markersPlugin.addMarker({
+            id: 'dot_' + pontosPoligonoAtual.length,
+            position: { yaw, pitch },
+            html: '<div class="dot-marker"></div>',
+            anchor: 'center center'
+          });
+
+          // Se tiver 3 ou mais, desenha a área
+          if (pontosPoligonoAtual.length >= 3) {
+            if (markersPlugin.getMarker(tempPolygonId)) {
+              markersPlugin.updateMarker({ id: tempPolygonId, polygon: pontosPoligonoAtual });
+            } else {
+              markersPlugin.addMarker({
+                id: tempPolygonId,
+                polygon: pontosPoligonoAtual,
+                svgStyle: { stroke: '#c5a059', strokeWidth: '3px', fill: 'rgba(197, 160, 89, 0.3)', pointerEvents: 'none' }
+              });
+            }
+          }
         }
       });
 
-      // Clique em um item existente (para apagar)
       markersPlugin.addEventListener('select-marker', ({ marker }) => {
-        if (modoPonto || modoDesenho) return; // Ignora se estiver no modo de criação
+        if (modoPonto || modoDesenho) return;
         
         selectedMarkerId = marker.id;
         document.getElementById('panel-edicao').style.display = 'block';
@@ -170,30 +183,6 @@
           document.getElementById('edit-title').innerText = 'Lote Desenhado';
         }
       });
-    }
-
-    function atualizarPoligonoTemporario() {
-      const markersPlugin = viewer.getPlugin(MarkersPlugin);
-      const pontoAtual = pontosPoligonoAtual[pontosPoligonoAtual.length - 1];
-
-      markersPlugin.addMarker({
-        id: 'dot_' + pontosPoligonoAtual.length,
-        position: pontoAtual,
-        html: '<div class="dot-marker"></div>',
-        anchor: 'center center'
-      });
-
-      if (pontosPoligonoAtual.length >= 3) {
-        if (markersPlugin.getMarker(tempPolygonId)) {
-          markersPlugin.updateMarker({ id: tempPolygonId, polygon: pontosPoligonoAtual });
-        } else {
-          markersPlugin.addMarker({
-            id: tempPolygonId,
-            polygon: pontosPoligonoAtual,
-            svgStyle: { stroke: '#c5a059', strokeWidth: '3px', fill: 'rgba(197, 160, 89, 0.3)', pointerEvents: 'none' }
-          });
-        }
-      }
     }
 
     document.getElementById('foto').addEventListener('change', function(e) {
@@ -239,18 +228,22 @@
 
     window.desfazerPonto = function(event) {
       if(event) { event.preventDefault(); event.stopPropagation(); }
+      
       if (pontosPoligonoAtual.length > 0) {
-        // Remove o último ponto do array
-        pontosPoligonoAtual.pop();
         const markersPlugin = viewer.getPlugin(MarkersPlugin);
         
-        // Remove o pontinho visual correspondente
-        const lastDotId = 'dot_' + (pontosPoligonoAtual.length + 1);
+        // Pega o ID do último ponto que foi adicionado (ex: se tem 3 pontos, o último é o dot_3)
+        const lastDotId = 'dot_' + pontosPoligonoAtual.length;
+        
+        // Remove o ponto do array
+        pontosPoligonoAtual.pop();
+        
+        // Remove o pontinho visual da tela
         if (markersPlugin.getMarker(lastDotId)) {
           markersPlugin.removeMarker(lastDotId);
         }
 
-        // Se o polígono temporário ainda existir, atualiza ou remove
+        // Se a área estiver desenhada, atualiza ou apaga
         if (markersPlugin.getMarker(tempPolygonId)) {
           if (pontosPoligonoAtual.length >= 3) {
             markersPlugin.updateMarker({ id: tempPolygonId, polygon: pontosPoligonoAtual });
@@ -263,6 +256,8 @@
 
     window.finalizarPoligono = function(event) {
       if(event) { event.preventDefault(); event.stopPropagation(); }
+      
+      if (!modoDesenho) return; // Impede clique duplo
 
       if (pontosPoligonoAtual.length >= 3) {
         const markersPlugin = viewer.getPlugin(MarkersPlugin);
@@ -275,13 +270,13 @@
           });
           marcacoes.push({ id: poligonoId, type: 'poligono', polygon: pontosPoligonoAtual });
         } catch (e) {
-          alert("Erro ao fechar. As linhas não podem se cruzar.");
+          alert("Erro ao fechar o lote. As linhas não podem se cruzar.");
         } finally {
           limparTemporarios();
           desativarModos();
         }
       } else {
-        alert('Você precisa de pelo menos 3 pontos.');
+        alert('Você precisa tocar em pelo menos 3 cantos para fechar.');
       }
     }
 
@@ -298,9 +293,7 @@
       const markersPlugin = viewer.getPlugin(MarkersPlugin);
       markersPlugin.removeMarker(selectedMarkerId);
       
-      // Remove do array de dados
       marcacoes = marcacoes.filter(m => m.id !== selectedMarkerId);
-      
       fecharPainelEdicao();
     }
 
