@@ -8,15 +8,28 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@photo-sphere-viewer/core@5.5.0/index.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@photo-sphere-viewer/markers-plugin@5.5.0/index.css" />
   <style>
-    body { margin: 0; background: #000; font-family: sans-serif; }
+    body { margin: 0; background: #000; font-family: sans-serif; overflow: hidden; }
     #viewer { width: 100vw; height: 100vh; }
     .custom-marker { width: 24px; height: 24px; background: #c5a059; border: 2px solid #fff; border-radius: 50%; box-shadow: 0 0 15px rgba(197,160,89,0.9); cursor: pointer; }
-    .psv-marker-tooltip { background: rgba(0,0,0,0.8) !important; color: white !important; border-radius: 6px; font-weight: bold; }
-    #erro { position: fixed; top: 10px; left: 10px; right: 10px; background: rgba(200, 0, 0, 0.9); color: white; padding: 12px; z-index: 1000; border-radius: 8px; display: none; text-align: center; font-size: 14px; }
+    
+    /* Painel que aparece quando clica na marcação */
+    #painel-info { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); background: rgba(20, 20, 20, 0.95); color: #fff; padding: 16px 24px; border-radius: 12px; border: 1px solid #c5a059; box-shadow: 0 10px 30px rgba(0,0,0,0.8); z-index: 1000; display: none; text-align: center; min-width: 200px; backdrop-filter: blur(10px); }
+    #painel-info h3 { margin: 0; font-size: 18px; color: #c5a059; }
+    #painel-info p { margin: 4px 0 0 0; font-size: 12px; color: #aaa; }
+    .fechar-painel { position: absolute; top: 5px; right: 10px; color: #aaa; cursor: pointer; font-size: 16px; font-weight: bold; }
+    
+    #erro { position: fixed; top: 10px; left: 10px; right: 10px; background: rgba(200, 0, 0, 0.9); color: white; padding: 12px; z-index: 2000; border-radius: 8px; display: none; text-align: center; font-size: 14px; }
   </style>
 </head>
 <body>
   <div id="erro"></div>
+  
+  <div id="painel-info">
+    <span class="fechar-painel" onclick="document.getElementById('painel-info').style.display='none'">✕</span>
+    <h3 id="info-titulo"></h3>
+    <p>Zava Tour</p>
+  </div>
+
   <div id="viewer"></div>
   
   <script type="importmap">
@@ -31,12 +44,6 @@
   </script>
   
   <script type="module">
-    window.onerror = function(msg) {
-      const e = document.getElementById('erro');
-      e.style.display = 'block';
-      e.innerText = 'Erro: ' + msg;
-    };
-
     import { Viewer } from '@photo-sphere-viewer/core';
     import { MarkersPlugin } from '@photo-sphere-viewer/markers-plugin';
 
@@ -60,14 +67,28 @@
             id: 'marcador_' + index,
             position: { yaw: m.yaw, pitch: m.pitch },
             html: `<div class="custom-marker"></div>`,
-            tooltip: m.titulo,
-            anchor: 'center center'
+            anchor: 'center center',
+            // Guardamos o título dentro do marcador para recuperar depois
+            data: { titulo: m.titulo } 
           }));
 
-          new Viewer({
+          const viewer = new Viewer({
             container: 'viewer',
             panorama: `${R2_URL}/tours/${id}.jpg`,
             plugins: [[MarkersPlugin, { markers: marcadoresFormatados }]]
+          });
+
+          // Escuta o clique no marcador
+          const markersPlugin = viewer.getPlugin(MarkersPlugin);
+          markersPlugin.addEventListener('select-marker', ({ marker }) => {
+            const painel = document.getElementById('painel-info');
+            document.getElementById('info-titulo').innerText = marker.config.data.titulo;
+            painel.style.display = 'block';
+          });
+
+          // Fecha o painel se clicar em outro lugar da tela
+          viewer.addEventListener('click', () => {
+            document.getElementById('painel-info').style.display = 'none';
           });
         })
         .catch(err => {
