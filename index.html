@@ -33,11 +33,12 @@
     .hidden-input { display: none; }
 
     .custom-marker { width: 20px; height: 20px; background: #c5a059; border: 2px solid #fff; border-radius: 50%; box-shadow: 0 0 10px rgba(197,160,89,0.9); cursor: pointer; }
-    .polygon-marker { stroke: #c5a059; stroke-width: 3; fill: rgba(197, 160, 89, 0.3); cursor: pointer; }
+    
+    /* Pontinho branco que aparece antes de fechar o lote */
+    .dot-marker { width: 12px; height: 12px; background: #fff; border: 2px solid #c5a059; border-radius: 50%; box-shadow: 0 0 5px #000; }
     
     #aviso-modo { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); background: #c5a059; color: #000; padding: 10px 20px; border-radius: 20px; font-weight: bold; font-size: 13px; z-index: 30; display: none; box-shadow: 0 4px 10px rgba(0,0,0,0.5); white-space: nowrap;}
     
-    /* Botão de concluir polígono flutuante */
     #btn-concluir-poligono { position: absolute; bottom: 90px; left: 50%; transform: translateX(-50%); z-index: 50; background: #4CAF50; color: #fff; padding: 12px 24px; border-radius: 30px; border: none; font-weight: bold; font-size: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); cursor: pointer; display: none; }
   </style>
 </head>
@@ -108,6 +109,7 @@
       });
 
       viewer.addEventListener('click', ({ data }) => {
+        if (!data || typeof data.yaw === 'undefined') return; // Previne cliques fora da esfera
         const { yaw, pitch } = data;
         
         // Modo Ponto
@@ -119,8 +121,8 @@
               id: id, position: { yaw, pitch }, html: `<div class="custom-marker"></div>`, anchor: 'center center'
             });
             marcacoes.push({ type: 'ponto', yaw, pitch, titulo });
-            desativarModos();
           }
+          desativarModos();
         }
         
         // Modo Desenho de Polígono
@@ -133,22 +135,27 @@
 
     function atualizarPoligonoTemporario() {
       const markersPlugin = viewer.getPlugin(MarkersPlugin);
-      if (pontosPoligonoAtual.length < 2) {
-         // Desenha apenas pontos soltos se tiver 1 ponto
-         if(pontosPoligonoAtual.length === 1) {
-            markersPlugin.addMarker({ id: 'temp_dot', position: pontosPoligonoAtual[0], html: '<div class="custom-marker"></div>' });
-         }
-         return;
-      }
-      
-      if (markersPlugin.getMarker(tempPolygonId)) {
-        markersPlugin.updateMarker({ id: tempPolygonId, polygon: pontosPoligonoAtual });
-      } else {
-        markersPlugin.addMarker({
-          id: tempPolygonId,
-          polygon: pontosPoligonoAtual,
-          svgStyle: { stroke: '#c5a059', strokeWidth: '3px', fill: 'rgba(197, 160, 89, 0.3)' }
-        });
+      const pontoAtual = pontosPoligonoAtual[pontosPoligonoAtual.length - 1];
+
+      // 1. Cria um pontinho branco visual para o local que foi clicado
+      markersPlugin.addMarker({
+        id: 'dot_' + pontosPoligonoAtual.length,
+        position: pontoAtual,
+        html: '<div class="dot-marker"></div>',
+        anchor: 'center center'
+      });
+
+      // 2. Só desenha a área dourada se tiver 3 ou mais pontos (evita erro de linha reta)
+      if (pontosPoligonoAtual.length >= 3) {
+        if (markersPlugin.getMarker(tempPolygonId)) {
+          markersPlugin.updateMarker({ id: tempPolygonId, polygon: pontosPoligonoAtual });
+        } else {
+          markersPlugin.addMarker({
+            id: tempPolygonId,
+            polygon: pontosPoligonoAtual,
+            svgStyle: { stroke: '#c5a059', strokeWidth: '3px', fill: 'rgba(197, 160, 89, 0.3)' }
+          });
+        }
       }
     }
 
@@ -175,32 +182,36 @@
     }
 
     window.toggleModoMarcacao = function() {
-      if (modoDesenho) finalizarPoligono(); // Cancela desenho se estiver ativo
+      if (modoDesenho) cancelarDesenho();
       modoPonto = !modoPonto;
       atualizarBotoesUI();
     }
 
     window.toggleModoDesenho = function() {
-      if (modoPonto) desativarModos(); // Cancela ponto
+      if (modoPonto) desativarModos();
       
-      modoDesenho = !modoDesenho;
       if (modoDesenho) {
+        cancelarDesenho(); // Se já estava desenhando, cancela e limpa
+      } else {
+        modoDesenho = true;
         pontosPoligonoAtual = [];
         document.getElementById('btn-concluir-poligono').style.display = 'block';
-      } else {
-        document.getElementById('btn-concluir-poligono').style.display = 'none';
+        atualizarBotoesUI();
       }
-      atualizarBotoesUI();
     }
 
     window.finalizarPoligono = function() {
       if (pontosPoligonoAtual.length >= 3) {
         const markersPlugin = viewer.getPlugin(MarkersPlugin);
-        markersPlugin.removeMarker(tempPolygonId);
-        if(markersPlugin.getMarker('temp_dot')) markersPlugin.removeMarker('temp_dot');
         
+        // Limpa os rascunhos temporários
+        if(markersPlugin.getMarker(tempPolygonId)) markersPlugin.removeMarker(tempPolygonId);
+        for(let i=1; i <= pontosPoligonoAtual.length; i++) {
+          if(markersPlugin.getMarker('dot_' + i)) markersPlugin.removeMarker('dot_' + i);
+        }
+
         const poligonoId = 'lote_' + Date.now();
-        // Adiciona o polígono definitivo
+        // Adiciona o lote definitivo
         markersPlugin.addMarker({
           id: poligonoId,
           polygon: pontosPoligonoAtual,
@@ -208,14 +219,18 @@
         });
 
         marcacoes.push({ type: 'poligono', polygon: pontosPoligonoAtual });
+        desativarModos();
       } else {
-        if (pontosPoligonoAtual.length > 0) alert('Desenhe pelo menos 3 pontos para formar um lote.');
-        // Limpa temporários
-        const markersPlugin = viewer.getPlugin(MarkersPlugin);
-        markersPlugin.removeMarker(tempPolygonId);
-        if(markersPlugin.getMarker('temp_dot')) markersPlugin.removeMarker('temp_dot');
+        alert('Você precisa tocar em pelo menos 3 cantos para fechar o lote.');
       }
-      
+    }
+
+    function cancelarDesenho() {
+      const markersPlugin = viewer.getPlugin(MarkersPlugin);
+      if(markersPlugin.getMarker(tempPolygonId)) markersPlugin.removeMarker(tempPolygonId);
+      for(let i=1; i <= pontosPoligonoAtual.length; i++) {
+        if(markersPlugin.getMarker('dot_' + i)) markersPlugin.removeMarker('dot_' + i);
+      }
       pontosPoligonoAtual = [];
       desativarModos();
     }
@@ -241,7 +256,7 @@
       } else if (modoDesenho) {
         btnDesenhar.innerText = '❌ Cancelar Desenho';
         btnDesenhar.classList.add('ativo');
-        aviso.innerText = 'Toque nos cantos do lote para desenhar';
+        aviso.innerText = 'Toque nos cantos do lote (min. 3)';
         aviso.style.display = 'block';
         document.getElementById('controls-panel').classList.remove('open');
         document.getElementById('menu-toggle').innerText = '☰';
