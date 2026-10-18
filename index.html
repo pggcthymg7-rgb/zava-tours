@@ -34,8 +34,8 @@
 
     .custom-marker { width: 20px; height: 20px; background: #c5a059; border: 2px solid #fff; border-radius: 50%; box-shadow: 0 0 10px rgba(197,160,89,0.9); cursor: pointer; }
     
-    /* Pontinho branco que aparece antes de fechar o lote */
-    .dot-marker { width: 12px; height: 12px; background: #fff; border: 2px solid #c5a059; border-radius: 50%; box-shadow: 0 0 5px #000; }
+    /* A MÁGICA: pointer-events: none deixa o dedo "atravessar" o pontinho para girar a tela */
+    .dot-marker { width: 14px; height: 14px; background: #fff; border: 2px solid #c5a059; border-radius: 50%; box-shadow: 0 0 5px #000; pointer-events: none; }
     
     #aviso-modo { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); background: #c5a059; color: #000; padding: 10px 20px; border-radius: 20px; font-weight: bold; font-size: 13px; z-index: 30; display: none; box-shadow: 0 4px 10px rgba(0,0,0,0.5); white-space: nowrap;}
     
@@ -53,23 +53,23 @@
   <div id="viewer"></div>
   <div id="aviso-modo"></div>
   
-  <button id="btn-concluir-poligono" onclick="finalizarPoligono()">✅ Concluir Lote</button>
+  <button id="btn-concluir-poligono" onclick="finalizarPoligono(event)">✅ Concluir Lote</button>
 
-  <button id="menu-toggle" onclick="toggleMenu()">☰</button>
+  <button id="menu-toggle" onclick="toggleMenu(event)">☰</button>
 
   <div id="controls-panel">
     <div class="controls-title">Opções do Tour</div>
     
-    <button class="btn-outline" id="btn-marcar" onclick="toggleModoMarcacao()">📍 Adicionar Ponto</button>
-    <button class="btn-outline" id="btn-desenhar" onclick="toggleModoDesenho()">✏️ Desenhar Lote</button>
+    <button class="btn-outline" id="btn-marcar" onclick="toggleModoMarcacao(event)">📍 Adicionar Ponto</button>
+    <button class="btn-outline" id="btn-desenhar" onclick="toggleModoDesenho(event)">✏️ Desenhar Lote</button>
     
     <hr style="border-color:#333; margin:8px 0; width:100%;">
     
-    <button class="btn-gold" id="btn-salvar" onclick="salvarTour()" style="padding:12px; font-size:14px;">💾 Salvar tour</button>
+    <button class="btn-gold" id="btn-salvar" onclick="salvarTour(event)" style="padding:12px; font-size:14px;">💾 Salvar tour</button>
     
     <p style="font-size:11px; color:#aaa; margin:4px 0;">Link gerado:</p>
     <input type="text" id="linkTour" readonly placeholder="Ainda não salvo" class="link-box">
-    <button class="btn-outline" onclick="copiarLink()" style="padding:8px; font-size:12px;">🔗 Copiar link</button>
+    <button class="btn-outline" onclick="copiarLink(event)" style="padding:8px; font-size:12px;">🔗 Copiar link</button>
   </div>
 
   <script type="importmap">
@@ -109,10 +109,9 @@
       });
 
       viewer.addEventListener('click', ({ data }) => {
-        if (!data || typeof data.yaw === 'undefined') return; // Previne cliques fora da esfera
+        if (!data || typeof data.yaw === 'undefined') return;
         const { yaw, pitch } = data;
         
-        // Modo Ponto
         if (modoPonto) {
           const titulo = prompt('Título da marcação (ex: Portaria):');
           if (titulo) {
@@ -125,7 +124,6 @@
           desativarModos();
         }
         
-        // Modo Desenho de Polígono
         if (modoDesenho) {
           pontosPoligonoAtual.push({ yaw, pitch });
           atualizarPoligonoTemporario();
@@ -137,15 +135,16 @@
       const markersPlugin = viewer.getPlugin(MarkersPlugin);
       const pontoAtual = pontosPoligonoAtual[pontosPoligonoAtual.length - 1];
 
-      // 1. Cria um pontinho branco visual para o local que foi clicado
+      // Adiciona pontinho visual sem bloquear o toque (pointer-events: none no CSS)
       markersPlugin.addMarker({
         id: 'dot_' + pontosPoligonoAtual.length,
         position: pontoAtual,
         html: '<div class="dot-marker"></div>',
-        anchor: 'center center'
+        anchor: 'center center',
+        tooltip: false
       });
 
-      // 2. Só desenha a área dourada se tiver 3 ou mais pontos (evita erro de linha reta)
+      // Só desenha a área se tiver 3 pontos, com pointer-events none para não travar o giro da tela
       if (pontosPoligonoAtual.length >= 3) {
         if (markersPlugin.getMarker(tempPolygonId)) {
           markersPlugin.updateMarker({ id: tempPolygonId, polygon: pontosPoligonoAtual });
@@ -153,7 +152,7 @@
           markersPlugin.addMarker({
             id: tempPolygonId,
             polygon: pontosPoligonoAtual,
-            svgStyle: { stroke: '#c5a059', strokeWidth: '3px', fill: 'rgba(197, 160, 89, 0.3)' }
+            svgStyle: { stroke: '#c5a059', strokeWidth: '3px', fill: 'rgba(197, 160, 89, 0.3)', pointerEvents: 'none' }
           });
         }
       }
@@ -171,7 +170,8 @@
       reader.readAsDataURL(file);
     });
 
-    window.toggleMenu = function() {
+    window.toggleMenu = function(event) {
+      if(event) event.stopPropagation();
       const panel = document.getElementById('controls-panel');
       const btn = document.getElementById('menu-toggle');
       if (panel.classList.contains('open')) {
@@ -181,17 +181,19 @@
       }
     }
 
-    window.toggleModoMarcacao = function() {
+    window.toggleModoMarcacao = function(event) {
+      if(event) event.stopPropagation();
       if (modoDesenho) cancelarDesenho();
       modoPonto = !modoPonto;
       atualizarBotoesUI();
     }
 
-    window.toggleModoDesenho = function() {
+    window.toggleModoDesenho = function(event) {
+      if(event) event.stopPropagation();
       if (modoPonto) desativarModos();
       
       if (modoDesenho) {
-        cancelarDesenho(); // Se já estava desenhando, cancela e limpa
+        cancelarDesenho(); 
       } else {
         modoDesenho = true;
         pontosPoligonoAtual = [];
@@ -200,38 +202,45 @@
       }
     }
 
-    window.finalizarPoligono = function() {
+    window.finalizarPoligono = function(event) {
+      // O SEGREDO ESTÁ AQUI: Evita que o clique no botão vaze para a foto
+      if(event) { event.preventDefault(); event.stopPropagation(); }
+
       if (pontosPoligonoAtual.length >= 3) {
         const markersPlugin = viewer.getPlugin(MarkersPlugin);
         
-        // Limpa os rascunhos temporários
-        if(markersPlugin.getMarker(tempPolygonId)) markersPlugin.removeMarker(tempPolygonId);
-        for(let i=1; i <= pontosPoligonoAtual.length; i++) {
-          if(markersPlugin.getMarker('dot_' + i)) markersPlugin.removeMarker('dot_' + i);
+        try {
+          const poligonoId = 'lote_' + Date.now();
+          markersPlugin.addMarker({
+            id: poligonoId,
+            polygon: pontosPoligonoAtual,
+            svgStyle: { stroke: '#c5a059', strokeWidth: '3px', fill: 'rgba(197, 160, 89, 0.3)', pointerEvents: 'none' }
+          });
+          marcacoes.push({ type: 'poligono', polygon: pontosPoligonoAtual });
+        } catch (e) {
+          console.error(e);
+          alert("Erro ao fechar o lote. As linhas não podem se cruzar.");
+        } finally {
+          // Limpa tudo e sai do modo desenho, dando certo ou errado
+          limparTemporarios();
+          desativarModos();
         }
-
-        const poligonoId = 'lote_' + Date.now();
-        // Adiciona o lote definitivo
-        markersPlugin.addMarker({
-          id: poligonoId,
-          polygon: pontosPoligonoAtual,
-          svgStyle: { stroke: '#c5a059', strokeWidth: '3px', fill: 'rgba(197, 160, 89, 0.3)' }
-        });
-
-        marcacoes.push({ type: 'poligono', polygon: pontosPoligonoAtual });
-        desativarModos();
       } else {
         alert('Você precisa tocar em pelo menos 3 cantos para fechar o lote.');
       }
     }
 
-    function cancelarDesenho() {
+    function limparTemporarios() {
       const markersPlugin = viewer.getPlugin(MarkersPlugin);
       if(markersPlugin.getMarker(tempPolygonId)) markersPlugin.removeMarker(tempPolygonId);
-      for(let i=1; i <= pontosPoligonoAtual.length; i++) {
+      for(let i=1; i <= 20; i++) {
         if(markersPlugin.getMarker('dot_' + i)) markersPlugin.removeMarker('dot_' + i);
       }
       pontosPoligonoAtual = [];
+    }
+
+    function cancelarDesenho() {
+      limparTemporarios();
       desativarModos();
     }
 
@@ -270,7 +279,8 @@
       }
     }
 
-    window.salvarTour = async function() {
+    window.salvarTour = async function(event) {
+      if(event) event.stopPropagation();
       const file = document.getElementById('foto').files[0];
       if (!file) return alert('Carregue uma foto primeiro.');
       if (marcacoes.length === 0) return alert('Adicione pelo menos uma marcação ou lote antes de salvar.');
@@ -299,7 +309,8 @@
       finally { btnSalvar.disabled = false; btnSalvar.innerText = '💾 Salvar tour'; }
     }
 
-    window.copiarLink = function() {
+    window.copiarLink = function(event) {
+      if(event) event.stopPropagation();
       const input = document.getElementById('linkTour');
       if (!input.value) return alert('Salve o tour primeiro.');
       navigator.clipboard.writeText(input.value);
