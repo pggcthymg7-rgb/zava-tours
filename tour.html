@@ -12,7 +12,6 @@
     #viewer { width: 100vw; height: 100vh; }
     .custom-marker { width: 24px; height: 24px; background: #c5a059; border: 2px solid #fff; border-radius: 50%; box-shadow: 0 0 15px rgba(197,160,89,0.9); cursor: pointer; }
     
-    /* Painel que aparece quando clica na marcação */
     #painel-info { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); background: rgba(20, 20, 20, 0.95); color: #fff; padding: 16px 24px; border-radius: 12px; border: 1px solid #c5a059; box-shadow: 0 10px 30px rgba(0,0,0,0.8); z-index: 1000; display: none; text-align: center; min-width: 200px; backdrop-filter: blur(10px); }
     #painel-info h3 { margin: 0; font-size: 18px; color: #c5a059; }
     #painel-info p { margin: 4px 0 0 0; font-size: 12px; color: #aaa; }
@@ -23,13 +22,11 @@
 </head>
 <body>
   <div id="erro"></div>
-  
   <div id="painel-info">
     <span class="fechar-painel" onclick="document.getElementById('painel-info').style.display='none'">✕</span>
     <h3 id="info-titulo"></h3>
     <p>Zava Tour</p>
   </div>
-
   <div id="viewer"></div>
   
   <script type="importmap">
@@ -63,14 +60,25 @@
         .then(dados => {
           const lista = Array.isArray(dados) ? dados : (dados.marcacoes || []);
           
-          const marcadoresFormatados = lista.map((m, index) => ({
-            id: 'marcador_' + index,
-            position: { yaw: m.yaw, pitch: m.pitch },
-            html: `<div class="custom-marker"></div>`,
-            anchor: 'center center',
-            // Guardamos o título dentro do marcador para recuperar depois
-            data: { titulo: m.titulo } 
-          }));
+          const marcadoresFormatados = lista.map((m, index) => {
+            if (m.type === 'poligono') {
+              // Renderiza o lote desenhado
+              return {
+                id: 'lote_' + index,
+                polygon: m.polygon,
+                svgStyle: { stroke: '#c5a059', strokeWidth: '3px', fill: 'rgba(197, 160, 89, 0.3)' }
+              };
+            } else {
+              // Renderiza o ponto
+              return {
+                id: 'marcador_' + index,
+                position: { yaw: m.yaw, pitch: m.pitch },
+                html: `<div class="custom-marker"></div>`,
+                anchor: 'center center',
+                data: { titulo: m.titulo } 
+              };
+            }
+          });
 
           const viewer = new Viewer({
             container: 'viewer',
@@ -78,15 +86,14 @@
             plugins: [[MarkersPlugin, { markers: marcadoresFormatados }]]
           });
 
-          // Escuta o clique no marcador
           const markersPlugin = viewer.getPlugin(MarkersPlugin);
           markersPlugin.addEventListener('select-marker', ({ marker }) => {
-            const painel = document.getElementById('painel-info');
-            document.getElementById('info-titulo').innerText = marker.config.data.titulo;
-            painel.style.display = 'block';
+            if (marker.config.data && marker.config.data.titulo) {
+              document.getElementById('info-titulo').innerText = marker.config.data.titulo;
+              document.getElementById('painel-info').style.display = 'block';
+            }
           });
 
-          // Fecha o painel se clicar em outro lugar da tela
           viewer.addEventListener('click', () => {
             document.getElementById('painel-info').style.display = 'none';
           });
@@ -94,8 +101,7 @@
         .catch(err => {
           console.error("Erro:", err);
           document.getElementById('erro').style.display = 'block';
-          document.getElementById('erro').innerHTML = `<strong>Aviso:</strong> Marcações falharam.<br><small>Motivo: ${err.message}</small>`;
-          
+          document.getElementById('erro').innerHTML = `<strong>Aviso:</strong> Erro ao carregar.<br><small>${err.message}</small>`;
           new Viewer({ container: 'viewer', panorama: `${R2_URL}/tours/${id}.jpg` });
         });
     }
