@@ -4,20 +4,37 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Zava Tour</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.css"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@photo-sphere-viewer/core@5.5.0/index.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@photo-sphere-viewer/markers-plugin@5.5.0/index.css" />
   <style>
     body { margin: 0; background: #000; font-family: sans-serif; }
-    #panorama { width: 100vw; height: 100vh; }
+    #viewer { width: 100vw; height: 100vh; }
     #alerta { position: absolute; top: 10px; left: 10px; right: 10px; background: rgba(200, 0, 0, 0.9); color: white; padding: 12px; z-index: 1000; border-radius: 8px; display: none; text-align: center; font-size: 14px; }
-    .custom-hotspot { background: #c5a059; border: 2px solid #fff; border-radius: 50%; width: 20px; height: 20px; cursor: pointer; box-shadow: 0 0 15px rgba(197,160,89,0.9); }
+    .custom-marker {
+      width: 24px; height: 24px; background: #c5a059; border: 2px solid #fff;
+      border-radius: 50%; box-shadow: 0 0 15px rgba(197,160,89,0.9); cursor: pointer;
+    }
+    /* Balão de texto do PSV */
+    .psv-marker-tooltip { background: rgba(0,0,0,0.8) !important; color: white !important; border-radius: 6px; font-weight: bold; }
   </style>
 </head>
 <body>
   <div id="alerta"></div>
-  <div id="panorama"></div>
+  <div id="viewer"></div>
   
-  <script src="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.js"></script>
-  <script>
+  <script type="importmap">
+    {
+      "imports": {
+        "@photo-sphere-viewer/core": "https://cdn.jsdelivr.net/npm/@photo-sphere-viewer/core@5.5.0/index.js",
+        "@photo-sphere-viewer/markers-plugin": "https://cdn.jsdelivr.net/npm/@photo-sphere-viewer/markers-plugin@5.5.0/index.js"
+      }
+    }
+  </script>
+  
+  <script type="module">
+    import { Viewer } from '@photo-sphere-viewer/core';
+    import { MarkersPlugin } from '@photo-sphere-viewer/markers-plugin';
+
     const R2_URL = "https://pub-16d4012b923340a3876d0dd16e806393.r2.dev";
     const params = new URLSearchParams(window.location.search);
     const id = params.get('id');
@@ -25,7 +42,6 @@
     if (!id) {
       document.body.innerHTML = '<h1 style="color:#fff;padding:20px;">Tour não encontrado.</h1>';
     } else {
-      // 1. Primeiro buscamos as marcações no servidor
       fetch(`/api/carregar/${id}`)
         .then(async r => {
           const texto = await r.text();
@@ -35,35 +51,28 @@
         .then(dados => {
           const lista = Array.isArray(dados) ? dados : (dados.marcacoes || []);
           
-          // Prepara a lista de pontinhos para o Pannellum
-          const hotSpots = lista.map(m => ({
-            pitch: m.pitch,
-            yaw: m.yaw,
-            type: 'info',
-            text: m.titulo,
-            cssClass: 'custom-hotspot'
+          // Converte para o formato de marcadores do PSV
+          const marcadoresFormatados = lista.map((m, index) => ({
+            id: 'marcador_' + index,
+            position: { yaw: m.yaw, pitch: m.pitch },
+            html: `<div class="custom-marker"></div>`,
+            tooltip: m.titulo,
+            anchor: 'center center'
           }));
 
-          // 2. Só agora montamos o visualizador, já entregando os pontinhos prontos
-          pannellum.viewer('panorama', {
-            type: 'equirectangular',
+          new Viewer({
+            container: 'viewer',
             panorama: `${R2_URL}/tours/${id}.jpg`,
-            autoLoad: true,
-            hotSpots: hotSpots // Passa os pontos direto na configuração inicial
+            plugins: [[MarkersPlugin, { markers: marcadoresFormatados }]]
           });
         })
         .catch(err => {
-          // Se as marcações falharem, pelo menos a foto carrega
           console.error("Erro:", err);
-          const alerta = document.getElementById('alerta');
-          alerta.style.display = 'block';
-          alerta.innerHTML = `<strong>Aviso:</strong> Marcações falharam.<br><small>Motivo: ${err.message}</small>`;
+          document.getElementById('alerta').style.display = 'block';
+          document.getElementById('alerta').innerHTML = `<strong>Aviso:</strong> Marcações falharam.<br><small>Motivo: ${err.message}</small>`;
           
-          pannellum.viewer('panorama', {
-            type: 'equirectangular',
-            panorama: `${R2_URL}/tours/${id}.jpg`,
-            autoLoad: true
-          });
+          // Tenta carregar só a foto se der erro nos marcadores
+          new Viewer({ container: 'viewer', panorama: `${R2_URL}/tours/${id}.jpg` });
         });
     }
   </script>
