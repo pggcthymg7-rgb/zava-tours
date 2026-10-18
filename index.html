@@ -18,10 +18,11 @@
     .btn-gold { background: #c5a059; color: #000; }
     .btn-outline { background: transparent; border: 1px solid #c5a059 !important; color: #fff; transition: 0.2s; }
     .btn-outline.ativo { background: rgba(197, 160, 89, 0.3); border: 2px solid #fff !important; }
-    #viewer { width: 100%; height: 50vh; background: #000; cursor: crosshair; }
-    @media (min-width: 768px) { #viewer { height: 100%; } }
-    .hidden { display: none; }
     
+    #viewer { width: 100%; height: 50vh; background: #000; cursor: crosshair; display: flex; align-items: center; justify-content: center; color: #666; font-size: 16px; text-align: center; padding: 20px; box-sizing: border-box; }
+    @media (min-width: 768px) { #viewer { height: 100%; } }
+    
+    .hidden { display: none; }
     .custom-marker { width: 24px; height: 24px; background: #c5a059; border: 2px solid #fff; border-radius: 50%; box-shadow: 0 0 15px rgba(197,160,89,0.9); cursor: pointer; }
   </style>
 </head>
@@ -40,7 +41,7 @@
       <input type="text" id="linkTour" readonly placeholder="Ainda não salvo" style="background:#222; color:#fff; font-size:12px;">
       <button class="btn-outline" onclick="copiarLink()">🔗 Copiar link</button>
     </div>
-    <div id="viewer"></div>
+    <div id="viewer">Carregue uma foto 360° para começar a editar.</div>
   </div>
 
   <script type="importmap">
@@ -59,17 +60,22 @@
     import { Viewer } from '@photo-sphere-viewer/core';
     import { MarkersPlugin } from '@photo-sphere-viewer/markers-plugin';
 
-    let viewer;
+    let viewer = null;
     let marcacoes = [];
     let modoMarcacao = false;
 
     function iniciarViewer(imagem) {
       if (viewer) viewer.destroy();
       
+      // Limpa a mensagem de "Carregue uma foto"
+      const container = document.getElementById('viewer');
+      container.innerHTML = '';
+      container.style.display = 'block'; // Restaura o display normal
+
       viewer = new Viewer({
         container: 'viewer',
         panorama: imagem,
-        navbar: false, // Desativa a barra inferior (evita o erro de tela cheia no iOS)
+        navbar: false,
         plugins: [[MarkersPlugin, { markers: [] }]]
       });
 
@@ -95,8 +101,6 @@
         }
       });
     }
-
-    iniciarViewer('https://photo-sphere-viewer.js.org/assets/sphere.jpg');
 
     document.getElementById('foto').addEventListener('change', function(e) {
       const file = e.target.files[0];
