@@ -14,17 +14,12 @@
     .sidebar { background: #141414; padding: 16px; overflow-y: auto; }
     .sidebar button, .sidebar input { width: 100%; margin-bottom: 8px; padding: 10px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; box-sizing: border-box; }
     .btn-gold { background: #c5a059; color: #000; }
-    .btn-outline { background: transparent; border: 1px solid #c5a059 !important; color: #fff; }
+    .btn-outline { background: transparent; border: 1px solid #c5a059 !important; color: #fff; transition: 0.2s; }
+    .btn-outline.ativo { background: rgba(197, 160, 89, 0.3); border: 2px solid #fff !important; }
     #panorama { width: 100%; height: 50vh; background: #000; cursor: crosshair; }
     @media (min-width: 768px) { #panorama { height: 100%; } }
     .hidden { display: none; }
-    
-    /* Estilo do pontinho no editor */
     .custom-hotspot { background: #c5a059; border: 2px solid #fff; border-radius: 50%; width: 20px; height: 20px; cursor: pointer; box-shadow: 0 0 15px rgba(197,160,89,0.9); }
-    
-    /* Animação e cor do botão quando o modo de marcação está ativo */
-    .btn-ativo { background: #4CAF50 !important; color: white !important; border-color: #4CAF50 !important; animation: pulse 1.5s infinite; }
-    @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(76, 175, 80, 0); } 100% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0); } }
   </style>
 </head>
 <body>
@@ -33,17 +28,14 @@
     <div class="sidebar">
       <input type="file" id="foto" accept="image/jpeg" class="hidden">
       <button class="btn-gold" onclick="document.getElementById('foto').click()">📂 Carregar foto 360°</button>
-      
-      <!-- Botão que ativa o modo de marcação -->
-      <button class="btn-outline" id="btn-adicionar" onclick="toggleModoAdicionar()">📍 Adicionar marcação</button>
+      <button class="btn-outline" id="btn-marcar" onclick="toggleModoMarcacao()">📍 Adicionar marcação</button>
+      <p id="instrucao" style="font-size:12px; color:#c5a059; display:none; margin-top:-4px; margin-bottom:8px;">Toque no local exato da foto para fixar o ponto!</p>
       
       <button class="btn-gold" id="btn-salvar" onclick="salvarTour()">💾 Salvar tour</button>
       <hr style="border-color:#333; margin:16px 0;">
       <p style="font-size:12px; color:#aaa; margin-bottom:4px;">Link do tour salvo:</p>
       <input type="text" id="linkTour" readonly placeholder="Ainda não salvo" style="background:#222; color:#fff; font-size:12px;">
       <button class="btn-outline" onclick="copiarLink()">🔗 Copiar link</button>
-      
-      <p style="font-size:11px; color:#666; margin-top:20px;">💡 <b>Como usar:</b> Ative a marcação, toque na imagem no local exato e dê um nome ao ponto.</p>
     </div>
     <div id="panorama"></div>
   </div>
@@ -56,9 +48,10 @@
       panorama: 'https://pannellum.org/images/alma.jpg',
       autoLoad: true
     });
+    configurarClique();
 
     let marcacoes = [];
-    let modoAdicionar = false; // Variável que controla se estamos no modo de adicionar
+    let modoMarcacao = false;
 
     document.getElementById('foto').addEventListener('change', function(e) {
       const file = e.target.files[0];
@@ -71,54 +64,56 @@
           panorama: ev.target.result,
           autoLoad: true
         });
+        configurarClique();
         marcacoes = [];
-        desativarModoAdicionar(); // Reseta o botão ao carregar nova foto
+        desativarModoMarcacao();
       };
       reader.readAsDataURL(file);
     });
 
-    // Liga e desliga o modo de adicionar
-    function toggleModoAdicionar() {
-      modoAdicionar = !modoAdicionar;
-      const btn = document.getElementById('btn-adicionar');
-      if (modoAdicionar) {
-        btn.innerText = '👆 Toque no local da imagem...';
-        btn.classList.add('btn-ativo');
+    function configurarClique() {
+      viewer.on('mousedown', function(event) {
+        if (modoMarcacao) {
+          const coords = viewer.mouseEventToCoords(event);
+          if (coords) {
+            const pitch = coords[0];
+            const yaw = coords[1];
+            const titulo = prompt('Título da marcação (ex: Lote 04, Portaria):');
+            if (titulo) {
+              viewer.addHotSpot({ pitch: pitch, yaw: yaw, type: 'info', text: titulo, cssClass: 'custom-hotspot' });
+              marcacoes.push({ pitch, yaw, titulo });
+              desativarModoMarcacao();
+            }
+          }
+        }
+      });
+    }
+
+    function toggleModoMarcacao() {
+      if (!document.getElementById('foto').files[0]) {
+        return alert('Carregue uma foto primeiro.');
+      }
+      modoMarcacao = !modoMarcacao;
+      const btn = document.getElementById('btn-marcar');
+      const instrucao = document.getElementById('instrucao');
+      
+      if (modoMarcacao) {
+        btn.innerText = '❌ Cancelar marcação';
+        btn.classList.add('ativo');
+        instrucao.style.display = 'block';
       } else {
-        desativarModoAdicionar();
+        desativarModoMarcacao();
       }
     }
 
-    function desativarModoAdicionar() {
-      modoAdicionar = false;
-      const btn = document.getElementById('btn-adicionar');
+    function desativarModoMarcacao() {
+      modoMarcacao = false;
+      const btn = document.getElementById('btn-marcar');
+      const instrucao = document.getElementById('instrucao');
       btn.innerText = '📍 Adicionar marcação';
-      btn.classList.remove('btn-ativo');
+      btn.classList.remove('ativo');
+      instrucao.style.display = 'none';
     }
-
-    // Ouve o clique/toque na área da imagem
-    document.getElementById('panorama').addEventListener('click', function(e) {
-      if (!modoAdicionar) return; // Se o modo não estiver ativo, não faz nada
-      
-      // Ignora se o usuário clicou nos botões de zoom (+/-) do Pannellum
-      if (e.target.closest('.pnlm-ui')) return;
-
-      // A MÁGICA: Converte a coordenada X,Y do toque para Pitch e Yaw (3D)
-      const coords = viewer.mouseEventToCoords(e);
-      if (!coords) return;
-
-      const pitch = coords[0];
-      const yaw = coords[1];
-      
-      const titulo = prompt('Título da marcação (ex: Lote 04, Portaria):');
-      if (titulo) {
-        // Adiciona o ponto visual na tela
-        viewer.addHotSpot({ pitch, yaw, type: 'info', text: titulo, cssClass: 'custom-hotspot' });
-        // Salva os dados no array para enviar ao servidor depois
-        marcacoes.push({ pitch, yaw, titulo });
-        desativarModoAdicionar(); // Desliga o modo após adicionar
-      }
-    });
 
     async function salvarTour() {
       const file = document.getElementById('foto').files[0];
