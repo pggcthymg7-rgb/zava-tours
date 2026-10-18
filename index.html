@@ -21,7 +21,6 @@
     @media (min-width: 768px) { #viewer { height: 100%; } }
     .hidden { display: none; }
     
-    /* Estilo do marcador no PSV */
     .custom-marker {
       width: 24px; height: 24px; background: #c5a059; border: 2px solid #fff;
       border-radius: 50%; box-shadow: 0 0 15px rgba(197,160,89,0.9); cursor: pointer;
@@ -46,10 +45,11 @@
     <div id="viewer"></div>
   </div>
 
-  <!-- Novas Bibliotecas (Photo Sphere Viewer) -->
   <script type="importmap">
     {
       "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
         "@photo-sphere-viewer/core": "https://cdn.jsdelivr.net/npm/@photo-sphere-viewer/core@5.5.0/index.js",
         "@photo-sphere-viewer/markers-plugin": "https://cdn.jsdelivr.net/npm/@photo-sphere-viewer/markers-plugin@5.5.0/index.js"
       }
@@ -74,7 +74,6 @@
         plugins: [[MarkersPlugin, { markers: [] }]]
       });
 
-      // Escuta o clique na tela do 360
       viewer.addEventListener('click', ({ data }) => {
         if (!modoMarcacao) return;
         
@@ -99,8 +98,7 @@
       });
     }
 
-    // Inicia com a foto de exemplo
-    iniciarViewer('https://photo-sphere-viewer.js.org/assets/sphere.jpg');
+    iniciarViewer('https://pannellum.org/images/alma.jpg');
 
     document.getElementById('foto').addEventListener('change', function(e) {
       const file = e.target.files[0];
