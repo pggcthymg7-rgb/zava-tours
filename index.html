@@ -9,43 +9,39 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@photo-sphere-viewer/markers-plugin@5.5.0/index.css" />
   <style>
     html, body { margin: 0; padding: 0; height: 100%; font-family: sans-serif; background: #0b0b0b; color: #fff; overflow: hidden; }
-    
-    /* O Visualizador ocupa a tela inteira, mas fica no fundo */
     #viewer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; background: #000; }
 
-    /* Tela de Boas-Vindas (Aparece só no começo) */
     #welcome-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #0b0b0b; z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; text-align: center; }
     #welcome-screen h1 { color: #c5a059; font-size: 32px; margin-bottom: 8px; letter-spacing: 2px; }
     #welcome-screen p { color: #aaa; font-size: 14px; margin-bottom: 30px; }
-    .btn-gold { background: #c5a059; color: #000; font-size: 16px; padding: 16px 32px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(197,160,89,0.3); transition: 0.2s; }
+    
+    .btn-gold { background: #c5a059; color: #000; font-size: 16px; padding: 16px 32px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(197,160,89,0.3); transition: 0.2s; text-align: center; }
     .btn-gold:hover { background: #d4af37; transform: scale(1.05); }
     .hidden { display: none !important; }
 
-    /* Botão Flutuante do Menu */
     #menu-toggle { position: absolute; bottom: 20px; right: 20px; z-index: 50; width: 60px; height: 60px; border-radius: 50%; background: #c5a059; color: #000; border: none; font-size: 24px; font-weight: bold; box-shadow: 0 4px 15px rgba(0,0,0,0.6); cursor: pointer; display: none; align-items: center; justify-content: center; transition: 0.2s; }
     #menu-toggle:active { transform: scale(0.9); }
 
-    /* Painel de Controle (O Menu que desliza) */
-    #controls-panel { position: absolute; bottom: 90px; right: 20px; width: 280px; background: rgba(20, 20, 20, 0.95); border: 1px solid #2c2c2c; border-radius: 12px; padding: 16px; z-index: 40; display: none; flex-direction: column; gap: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); backdrop-filter: blur(10px); transform-origin: bottom right; transition: transform 0.2s, opacity 0.2s; }
+    #controls-panel { position: absolute; bottom: 90px; right: 20px; width: 280px; background: rgba(20, 20, 20, 0.95); border: 1px solid #2c2c2c; border-radius: 12px; padding: 16px; z-index: 40; display: none; flex-direction: column; gap: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); backdrop-filter: blur(10px); transition: transform 0.2s, opacity 0.2s; }
     #controls-panel.open { display: flex; }
     
     .controls-title { color: #c5a059; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; font-weight: bold; margin-bottom: 4px; border-bottom: 1px solid #333; padding-bottom: 4px; }
-    
-    .btn-outline { background: transparent; border: 1px solid #c5a059 !important; color: #fff; padding: 12px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; width: 100%; box-sizing: border-box; }
+    .btn-outline { background: transparent; border: 1px solid #c5a059 !important; color: #fff; padding: 12px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; width: 100%; box-sizing: border-box; text-align: center; }
     .btn-outline.ativo { background: rgba(197, 160, 89, 0.3); border: 2px solid #fff !important; }
     
     .link-box { background: #222; color: #fff; font-size: 11px; padding: 10px; border-radius: 6px; border: 1px solid #333; width: 100%; box-sizing: border-box; margin-bottom: 4px; }
     .hidden-input { display: none; }
 
-    /* Marcador Dourado */
-    .custom-marker { width: 24px; height: 24px; background: #c5a059; border: 2px solid #fff; border-radius: 50%; box-shadow: 0 0 15px rgba(197,160,89,0.9); cursor: pointer; }
+    .custom-marker { width: 20px; height: 20px; background: #c5a059; border: 2px solid #fff; border-radius: 50%; box-shadow: 0 0 10px rgba(197,160,89,0.9); cursor: pointer; }
+    .polygon-marker { stroke: #c5a059; stroke-width: 3; fill: rgba(197, 160, 89, 0.3); cursor: pointer; }
     
-    /* Aviso de modo de marcação ativo */
-    #aviso-modo { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); background: #c5a059; color: #000; padding: 10px 20px; border-radius: 20px; font-weight: bold; font-size: 13px; z-index: 30; display: none; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+    #aviso-modo { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); background: #c5a059; color: #000; padding: 10px 20px; border-radius: 20px; font-weight: bold; font-size: 13px; z-index: 30; display: none; box-shadow: 0 4px 10px rgba(0,0,0,0.5); white-space: nowrap;}
+    
+    /* Botão de concluir polígono flutuante */
+    #btn-concluir-poligono { position: absolute; bottom: 90px; left: 50%; transform: translateX(-50%); z-index: 50; background: #4CAF50; color: #fff; padding: 12px 24px; border-radius: 30px; border: none; font-weight: bold; font-size: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); cursor: pointer; display: none; }
   </style>
 </head>
 <body>
-  <!-- Tela Inicial -->
   <div id="welcome-screen">
     <h1>❖ ZAVA TOUR</h1>
     <p>Editor de Tour Virtual 360°</p>
@@ -53,20 +49,18 @@
     <button class="btn-gold" onclick="document.getElementById('foto').click()">📂 Carregar Foto 360°</button>
   </div>
 
-  <!-- Visualizador -->
   <div id="viewer"></div>
+  <div id="aviso-modo"></div>
+  
+  <button id="btn-concluir-poligono" onclick="finalizarPoligono()">✅ Concluir Lote</button>
 
-  <!-- Aviso flutuante -->
-  <div id="aviso-modo">Toque na imagem para adicionar a marcação</div>
-
-  <!-- Botão do Menu -->
   <button id="menu-toggle" onclick="toggleMenu()">☰</button>
 
-  <!-- Painel do Menu -->
   <div id="controls-panel">
     <div class="controls-title">Opções do Tour</div>
     
-    <button class="btn-outline" id="btn-marcar" onclick="toggleModoMarcacao()">📍 Adicionar marcação</button>
+    <button class="btn-outline" id="btn-marcar" onclick="toggleModoMarcacao()">📍 Adicionar Ponto</button>
+    <button class="btn-outline" id="btn-desenhar" onclick="toggleModoDesenho()">✏️ Desenhar Lote</button>
     
     <hr style="border-color:#333; margin:8px 0; width:100%;">
     
@@ -95,12 +89,14 @@
 
     let viewer = null;
     let marcacoes = [];
-    let modoMarcacao = false;
+    let modoPonto = false;
+    let modoDesenho = false;
+    let pontosPoligonoAtual = [];
+    let tempPolygonId = 'temp_poly';
 
     function iniciarViewer(imagem) {
       if (viewer) viewer.destroy();
       
-      // Esconde a tela inicial e mostra o botão do menu
       document.getElementById('welcome-screen').classList.add('hidden');
       document.getElementById('menu-toggle').style.display = 'flex';
 
@@ -112,26 +108,48 @@
       });
 
       viewer.addEventListener('click', ({ data }) => {
-        if (!modoMarcacao) return;
-        
         const { yaw, pitch } = data;
-        const titulo = prompt('Título da marcação (ex: Lote 04, Portaria):');
         
-        if (titulo) {
-          const id = 'marcador_' + Date.now();
-          const markersPlugin = viewer.getPlugin(MarkersPlugin);
-          
-          markersPlugin.addMarker({
-            id: id,
-            position: { yaw, pitch },
-            html: `<div class="custom-marker"></div>`,
-            anchor: 'center center'
-          });
-
-          marcacoes.push({ yaw, pitch, titulo });
-          desativarModoMarcacao();
+        // Modo Ponto
+        if (modoPonto) {
+          const titulo = prompt('Título da marcação (ex: Portaria):');
+          if (titulo) {
+            const id = 'marcador_' + Date.now();
+            viewer.getPlugin(MarkersPlugin).addMarker({
+              id: id, position: { yaw, pitch }, html: `<div class="custom-marker"></div>`, anchor: 'center center'
+            });
+            marcacoes.push({ type: 'ponto', yaw, pitch, titulo });
+            desativarModos();
+          }
+        }
+        
+        // Modo Desenho de Polígono
+        if (modoDesenho) {
+          pontosPoligonoAtual.push({ yaw, pitch });
+          atualizarPoligonoTemporario();
         }
       });
+    }
+
+    function atualizarPoligonoTemporario() {
+      const markersPlugin = viewer.getPlugin(MarkersPlugin);
+      if (pontosPoligonoAtual.length < 2) {
+         // Desenha apenas pontos soltos se tiver 1 ponto
+         if(pontosPoligonoAtual.length === 1) {
+            markersPlugin.addMarker({ id: 'temp_dot', position: pontosPoligonoAtual[0], html: '<div class="custom-marker"></div>' });
+         }
+         return;
+      }
+      
+      if (markersPlugin.getMarker(tempPolygonId)) {
+        markersPlugin.updateMarker({ id: tempPolygonId, polygon: pontosPoligonoAtual });
+      } else {
+        markersPlugin.addMarker({
+          id: tempPolygonId,
+          polygon: pontosPoligonoAtual,
+          svgStyle: { stroke: '#c5a059', strokeWidth: '3px', fill: 'rgba(197, 160, 89, 0.3)' }
+        });
+      }
     }
 
     document.getElementById('foto').addEventListener('change', function(e) {
@@ -141,7 +159,7 @@
       reader.onload = function(ev) {
         iniciarViewer(ev.target.result);
         marcacoes = [];
-        desativarModoMarcacao();
+        desativarModos();
       };
       reader.readAsDataURL(file);
     });
@@ -150,58 +168,104 @@
       const panel = document.getElementById('controls-panel');
       const btn = document.getElementById('menu-toggle');
       if (panel.classList.contains('open')) {
-        panel.classList.remove('open');
-        btn.innerText = '☰';
+        panel.classList.remove('open'); btn.innerText = '☰';
       } else {
-        panel.classList.add('open');
-        btn.innerText = '✕';
+        panel.classList.add('open'); btn.innerText = '✕';
       }
     }
 
     window.toggleModoMarcacao = function() {
-      modoMarcacao = !modoMarcacao;
-      const btn = document.getElementById('btn-marcar');
-      const aviso = document.getElementById('aviso-modo');
-      
-      if (modoMarcacao) {
-        // Fecha o menu para o usuário ver a imagem inteira
-        document.getElementById('controls-panel').classList.remove('open');
-        document.getElementById('menu-toggle').innerText = '☰';
-        
-        btn.innerText = '❌ Cancelar marcação';
-        btn.classList.add('ativo');
-        aviso.style.display = 'block';
-      } else {
-        desativarModoMarcacao();
-      }
+      if (modoDesenho) finalizarPoligono(); // Cancela desenho se estiver ativo
+      modoPonto = !modoPonto;
+      atualizarBotoesUI();
     }
 
-    function desativarModoMarcacao() {
-      modoMarcacao = false;
-      const btn = document.getElementById('btn-marcar');
+    window.toggleModoDesenho = function() {
+      if (modoPonto) desativarModos(); // Cancela ponto
+      
+      modoDesenho = !modoDesenho;
+      if (modoDesenho) {
+        pontosPoligonoAtual = [];
+        document.getElementById('btn-concluir-poligono').style.display = 'block';
+      } else {
+        document.getElementById('btn-concluir-poligono').style.display = 'none';
+      }
+      atualizarBotoesUI();
+    }
+
+    window.finalizarPoligono = function() {
+      if (pontosPoligonoAtual.length >= 3) {
+        const markersPlugin = viewer.getPlugin(MarkersPlugin);
+        markersPlugin.removeMarker(tempPolygonId);
+        if(markersPlugin.getMarker('temp_dot')) markersPlugin.removeMarker('temp_dot');
+        
+        const poligonoId = 'lote_' + Date.now();
+        // Adiciona o polígono definitivo
+        markersPlugin.addMarker({
+          id: poligonoId,
+          polygon: pontosPoligonoAtual,
+          svgStyle: { stroke: '#c5a059', strokeWidth: '3px', fill: 'rgba(197, 160, 89, 0.3)' }
+        });
+
+        marcacoes.push({ type: 'poligono', polygon: pontosPoligonoAtual });
+      } else {
+        if (pontosPoligonoAtual.length > 0) alert('Desenhe pelo menos 3 pontos para formar um lote.');
+        // Limpa temporários
+        const markersPlugin = viewer.getPlugin(MarkersPlugin);
+        markersPlugin.removeMarker(tempPolygonId);
+        if(markersPlugin.getMarker('temp_dot')) markersPlugin.removeMarker('temp_dot');
+      }
+      
+      pontosPoligonoAtual = [];
+      desativarModos();
+    }
+
+    function desativarModos() {
+      modoPonto = false;
+      modoDesenho = false;
+      atualizarBotoesUI();
+    }
+
+    function atualizarBotoesUI() {
+      const btnMarcar = document.getElementById('btn-marcar');
+      const btnDesenhar = document.getElementById('btn-desenhar');
       const aviso = document.getElementById('aviso-modo');
-      btn.innerText = '📍 Adicionar marcação';
-      btn.classList.remove('ativo');
-      aviso.style.display = 'none';
+      
+      if (modoPonto) {
+        btnMarcar.innerText = '❌ Cancelar Ponto';
+        btnMarcar.classList.add('ativo');
+        aviso.innerText = 'Toque na imagem para adicionar o ponto';
+        aviso.style.display = 'block';
+        document.getElementById('controls-panel').classList.remove('open');
+        document.getElementById('menu-toggle').innerText = '☰';
+      } else if (modoDesenho) {
+        btnDesenhar.innerText = '❌ Cancelar Desenho';
+        btnDesenhar.classList.add('ativo');
+        aviso.innerText = 'Toque nos cantos do lote para desenhar';
+        aviso.style.display = 'block';
+        document.getElementById('controls-panel').classList.remove('open');
+        document.getElementById('menu-toggle').innerText = '☰';
+      } else {
+        btnMarcar.innerText = '📍 Adicionar Ponto';
+        btnDesenhar.innerText = '✏️ Desenhar Lote';
+        btnMarcar.classList.remove('ativo');
+        btnDesenhar.classList.remove('ativo');
+        aviso.style.display = 'none';
+        document.getElementById('btn-concluir-poligono').style.display = 'none';
+      }
     }
 
     window.salvarTour = async function() {
       const file = document.getElementById('foto').files[0];
       if (!file) return alert('Carregue uma foto primeiro.');
-      if (marcacoes.length === 0) return alert('Adicione pelo menos uma marcação antes de salvar.');
+      if (marcacoes.length === 0) return alert('Adicione pelo menos uma marcação ou lote antes de salvar.');
 
       const btnSalvar = document.getElementById('btn-salvar');
       btnSalvar.disabled = true;
       btnSalvar.innerText = '⏳ Salvando...';
 
       try {
-        const options = {
-          maxSizeMB: 4,
-          maxWidthOrHeight: 8192,
-          useWebWorker: true,
-          onProgress: (progress) => { btnSalvar.innerText = `⏳ Comprimindo (${Math.round(progress)}%)`; }
-        };
-        
+        const options = { maxSizeMB: 4, maxWidthOrHeight: 8192, useWebWorker: true, onProgress: (progress) => { btnSalvar.innerText = `⏳ Comprimindo (${Math.round(progress)}%)`; } };
         const arquivoComprimido = await imageCompression(file, options);
         
         btnSalvar.innerText = '⏳ Enviando...';
@@ -213,19 +277,11 @@
         const resp = await fetch(`/api/salvar/${id}`, { method: 'POST', body: formData });
 
         if (resp.ok) {
-          const link = `${window.location.origin}/tour.html?id=${id}`;
-          document.getElementById('linkTour').value = link;
+          document.getElementById('linkTour').value = `${window.location.origin}/tour.html?id=${id}`;
           alert('Tour salvo com sucesso!');
-        } else {
-          alert('Erro ao salvar.');
-        }
-      } catch (err) {
-        alert('Erro ao processar ou enviar.');
-        console.error(err);
-      } finally {
-        btnSalvar.disabled = false;
-        btnSalvar.innerText = '💾 Salvar tour';
-      }
+        } else { alert('Erro ao salvar.'); }
+      } catch (err) { alert('Erro ao processar.'); console.error(err); } 
+      finally { btnSalvar.disabled = false; btnSalvar.innerText = '💾 Salvar tour'; }
     }
 
     window.copiarLink = function() {
