@@ -8,7 +8,8 @@
   <style>
     body { margin: 0; background: #000; font-family: sans-serif; }
     #panorama { width: 100vw; height: 100vh; }
-    #alerta { position: absolute; top: 10px; left: 10px; right: 10px; background: rgba(200, 0, 0, 0.9); color: white; padding: 12px; z-index: 1000; border-radius: 8px; display: none; text-align: center; font-size: 14px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+    #alerta { position: absolute; top: 10px; left: 10px; right: 10px; background: rgba(200, 0, 0, 0.9); color: white; padding: 12px; z-index: 1000; border-radius: 8px; display: none; text-align: center; font-size: 14px; }
+    .custom-hotspot { background: #c5a059; border: 2px solid #fff; border-radius: 50%; width: 20px; height: 20px; cursor: pointer; box-shadow: 0 0 15px rgba(197,160,89,0.9); }
   </style>
 </head>
 <body>
@@ -17,7 +18,6 @@
   
   <script src="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.js"></script>
   <script>
-    // Link do seu R2
     const R2_URL = "https://pub-16d4012b923340a3876d0dd16e806393.r2.dev";
     const params = new URLSearchParams(window.location.search);
     const id = params.get('id');
@@ -25,14 +25,12 @@
     if (!id) {
       document.body.innerHTML = '<h1 style="color:#fff;padding:20px;">Tour não encontrado.</h1>';
     } else {
-      // 1. Inicia a foto 360° imediatamente
       const viewer = pannellum.viewer('panorama', {
         type: 'equirectangular',
         panorama: `${R2_URL}/tours/${id}.jpg`,
         autoLoad: true
       });
 
-      // 2. Tenta carregar as marcações
       fetch(`/api/carregar/${id}`)
         .then(async r => {
           const texto = await r.text();
@@ -40,16 +38,23 @@
           return JSON.parse(texto);
         })
         .then(dados => {
-          // Se deu certo, adiciona as marcações
-          if (dados.marcacoes) {
-            dados.marcacoes.forEach(m => {
-              viewer.addHotSpot({ pitch: m.pitch, yaw: m.yaw, type: 'info', text: m.titulo });
+          // A MÁGICA ACONTECE AQUI: o arquivo salvo é uma lista direta, não um objeto
+          const lista = Array.isArray(dados) ? dados : dados.marcacoes;
+          
+          if (lista && lista.length > 0) {
+            lista.forEach(m => {
+              viewer.addHotSpot({ 
+                pitch: m.pitch, 
+                yaw: m.yaw, 
+                type: 'info', 
+                text: m.titulo,
+                cssClass: 'custom-hotspot' 
+              });
             });
           }
         })
         .catch(err => {
-          // Se der erro, mostra a faixa vermelha explicando
-          console.error("Erro ao carregar marcações:", err);
+          console.error("Erro:", err);
           const alerta = document.getElementById('alerta');
           alerta.style.display = 'block';
           alerta.innerHTML = `<strong>Aviso:</strong> A foto carregou, mas as marcações falharam.<br><small>Motivo: ${err.message}</small>`;
