@@ -15,11 +15,11 @@
     #welcome-screen h1 { color: #c5a059; font-size: 32px; margin-bottom: 8px; letter-spacing: 2px; }
     #welcome-screen p { color: #aaa; font-size: 14px; margin-bottom: 30px; }
     
-    .btn-g0old { background: #c5a059; color: #000; font-size: 16px; padding: 16px 32px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(197,160,89,0.3); transition: 0.2s; text-align: center; touch-action: manipulation; }
+    .btn-gold { background: #c5a059; color: #000; font-size: 16px; padding: 16px 32px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(197,160,89,0.3); transition: 0.2s; text-align: center; touch-action: manipulation; }
     .btn-gold:active { transform: scale(0.95); }
     .hidden { display: none !important; }
 
-    #menu-toggle { position: absolute; bottom: 20px; right: 20px; z-index: 9999; width: 60px; height: 60px; border-radius: 50%; background: #c5a059; color: #000; border: none; font-size: 24px; font-weight: bold; box-shadow:  4px 15px rgba(0,0,0,0.6); cursor: pointer; display: none; align-items: center; justify-content: center; transition: 0.2s; touch-action: manipulation; }
+    #menu-toggle { position: absolute; bottom: 20px; right: 20px; z-index: 9999; width: 60px; height: 60px; border-radius: 50%; background: #c5a059; color: #000; border: none; font-size: 24px; font-weight: bold; box-shadow: 0 4px 15px rgba(0,0,0,0.6); cursor: pointer; display: none; align-items: center; justify-content: center; transition: 0.2s; touch-action: manipulation; }
     #menu-toggle:active { transform: scale(0.9); }
 
     #controls-panel { position: absolute; bottom: 90px; right: 20px; width: 280px; background: rgba(20, 20, 20, 0.95); border: 1px solid #2c2c2c; border-radius: 12px; padding: 16px; z-index: 9998; display: none; flex-direction: column; gap: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); backdrop-filter: blur(10px); touch-action: manipulation; }
@@ -37,7 +37,6 @@
     
     #aviso-modo { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); background: #c5a059; color: #000; padding: 10px 20px; border-radius: 20px; font-weight: bold; font-size: 13px; z-index: 9997; display: none; box-shadow: 0 4px 10px rgba(0,0,0,0.5); white-space: nowrap; pointer-events: none; }
     
-    /* Painel de botões durante o desenho (Z-index alto para não ser bloqueado) */
     #action-buttons { position: absolute; bottom: 90px; left: 50%; transform: translateX(-50%); z-index: 9999; display: none; gap: 10px; touch-action: manipulation; pointer-events: auto; }
     .btn-action { color: #fff; padding: 14px 20px; border-radius: 30px; border: none; font-weight: bold; font-size: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.6); cursor: pointer; touch-action: manipulation; white-space: nowrap; pointer-events: auto; }
     .btn-action:active { transform: scale(0.95); }
@@ -108,7 +107,6 @@
     let modoPonto = false;
     let modoDesenho = false;
     let pontosPoligonoAtual = [];
-    let tempPolygonId = 'temp_poly';
     let selectedMarkerId = null;
 
     function iniciarViewer(imagem) {
@@ -121,7 +119,7 @@
         container: 'viewer',
         panorama: imagem,
         navbar: false,
-        touchmoveTwoFingers: false, // 1 dedo para girar
+        touchmoveTwoFingers: false,
         plugins: [[MarkersPlugin, { markers: [] }]]
       });
 
@@ -148,29 +146,13 @@
         if (modoDesenho) {
           pontosPoligonoAtual.push({ yaw, pitch });
           
+          // Apenas adiciona o pontinho visual na tela. Não desenha o polígono ainda.
           markersPlugin.addMarker({
             id: 'dot_' + pontosPoligonoAtual.length,
             position: { yaw, pitch },
             html: '<div class="dot-marker"></div>',
             anchor: 'center center'
           });
-
-          // Tenta desenhar a área viva, se der erro (linhas cruzadas) ignora e espera o botão concluir
-          if (pontosPoligonoAtual.length >= 3) {
-            try {
-              if (markersPlugin.getMarker(tempPolygonId)) {
-                markersPlugin.updateMarker({ id: tempPolygonId, polygon: pontosPoligonoAtual });
-              } else {
-                markersPlugin.addMarker({
-                  id: tempPolygonId,
-                  polygon: pontosPoligonoAtual,
-                  svgStyle: { stroke: '#c5a059', strokeWidth: '3px', fill: 'rgba(197, 160, 89, 0.3)', pointerEvents: 'none' }
-                });
-              }
-            } catch(e) {
-              // Ignora silenciosamente o erro de desenho temporário
-            }
-          }
         }
       });
 
@@ -241,17 +223,10 @@
         if (markersPlugin.getMarker(lastDotId)) {
           markersPlugin.removeMarker(lastDotId);
         }
-
-        if (markersPlugin.getMarker(tempPolygonId)) {
-          if (pontosPoligonoAtual.length >= 3) {
-            try { markersPlugin.updateMarker({ id: tempPolygonId, polygon: pontosPoligonoAtual }); } catch(e) {}
-          } else {
-            markersPlugin.removeMarker(tempPolygonId);
-          }
-        }
       }
     }
 
+    // A MÁGICA ACONTECE AQUI: Ordena os pontos e desenha o polígono sem cruzar
     window.finalizarPoligono = function(event) {
       if(event) { event.stopPropagation(); }
       
@@ -259,21 +234,34 @@
 
       if (pontosPoligonoAtual.length >= 3) {
         const markersPlugin = viewer.getPlugin(MarkersPlugin);
+        
+        // 1. Calcula o centro da forma
+        let cx = 0, cy = 0;
+        pontosPoligonoAtual.forEach(p => { cx += p.yaw; cy += p.pitch; });
+        cx /= pontosPoligonoAtual.length;
+        cy /= pontosPoligonoAtual.length;
+
+        // 2. Ordena os pontos pelo ângulo em volta do centro (garante que não vai cruzar)
+        const pontosOrdenados = [...pontosPoligonoAtual].sort((a, b) => {
+          let angA = Math.atan2(a.pitch - cy, a.yaw - cx);
+          let angB = Math.atan2(b.pitch - cy, b.yaw - cx);
+          return angA - angB;
+        });
+
         try {
           const poligonoId = 'lote_' + Date.now();
           markersPlugin.addMarker({
             id: poligonoId,
-            polygon: pontosPoligonoAtual,
+            polygon: pontosOrdenados,
             svgStyle: { stroke: '#c5a059', strokeWidth: '3px', fill: 'rgba(197, 160, 89, 0.3)', pointerEvents: 'none' }
           });
-          marcacoes.push({ id: poligonoId, type: 'poligono', polygon: pontosPoligonoAtual });
+          marcacoes.push({ id: poligonoId, type: 'poligono', polygon: pontosOrdenados });
           
-          // Só limpa e desativa se der certo
           limparTemporarios();
           desativarModos();
         } catch (e) {
           console.error(e);
-          alert("As linhas se cruzaram. Use o botão Desfazer (laranja) para corrigir o último ponto.");
+          alert("Erro inesperado ao desenhar. Tente novamente.");
         }
       } else {
         alert('Você precisa tocar em pelo menos 3 cantos.');
@@ -305,7 +293,6 @@
 
     function limparTemporarios() {
       const markersPlugin = viewer.getPlugin(MarkersPlugin);
-      if(markersPlugin.getMarker(tempPolygonId)) markersPlugin.removeMarker(tempPolygonId);
       for(let i=1; i <= 50; i++) {
         if(markersPlugin.getMarker('dot_' + i)) markersPlugin.removeMarker('dot_' + i);
       }
