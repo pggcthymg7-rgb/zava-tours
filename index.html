@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Zava Tour — Editor</title>
   
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@photo-sphere-viewer/core@5.5.0/index.css" />
@@ -10,46 +10,71 @@
   <style>
     html, body { margin: 0; padding: 0; height: 100%; font-family: sans-serif; background: #0b0b0b; color: #fff; overflow: hidden; }
     
-    header { height: 60px; padding: 0 20px; background: #141414; border-bottom: 1px solid #2c2c2c; display: flex; align-items: center; box-sizing: border-box; }
-    header h1 { color: #c5a059; font-size: 18px; margin: 0; }
+    /* O Visualizador ocupa a tela inteira, mas fica no fundo */
+    #viewer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; background: #000; }
+
+    /* Tela de Boas-Vindas (Aparece só no começo) */
+    #welcome-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #0b0b0b; z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; text-align: center; }
+    #welcome-screen h1 { color: #c5a059; font-size: 32px; margin-bottom: 8px; letter-spacing: 2px; }
+    #welcome-screen p { color: #aaa; font-size: 14px; margin-bottom: 30px; }
+    .btn-gold { background: #c5a059; color: #000; font-size: 16px; padding: 16px 32px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(197,160,89,0.3); transition: 0.2s; }
+    .btn-gold:hover { background: #d4af37; transform: scale(1.05); }
+    .hidden { display: none !important; }
+
+    /* Botão Flutuante do Menu */
+    #menu-toggle { position: absolute; bottom: 20px; right: 20px; z-index: 50; width: 60px; height: 60px; border-radius: 50%; background: #c5a059; color: #000; border: none; font-size: 24px; font-weight: bold; box-shadow: 0 4px 15px rgba(0,0,0,0.6); cursor: pointer; display: none; align-items: center; justify-content: center; transition: 0.2s; }
+    #menu-toggle:active { transform: scale(0.9); }
+
+    /* Painel de Controle (O Menu que desliza) */
+    #controls-panel { position: absolute; bottom: 90px; right: 20px; width: 280px; background: rgba(20, 20, 20, 0.95); border: 1px solid #2c2c2c; border-radius: 12px; padding: 16px; z-index: 40; display: none; flex-direction: column; gap: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); backdrop-filter: blur(10px); transform-origin: bottom right; transition: transform 0.2s, opacity 0.2s; }
+    #controls-panel.open { display: flex; }
     
-    /* Layout no celular: Menu em cima (50%), visualizador embaixo (50%) */
-    .container { display: flex; height: calc(100% - 60px); flex-direction: column; width: 100%; }
-    .sidebar { background: #141414; padding: 16px; overflow-y: auto; height: 50%; box-sizing: border-box; z-index: 10; }
-    #viewer { width: 100%; height: 50%; background: #000; cursor: crosshair; display: flex; align-items: center; justify-content: center; color: #666; font-size: 16px; text-align: center; padding: 20px; box-sizing: border-box; position: relative; z-index: 1; }
+    .controls-title { color: #c5a059; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; font-weight: bold; margin-bottom: 4px; border-bottom: 1px solid #333; padding-bottom: 4px; }
     
-    /* Layout no computador: Menu na esquerda (300px), visualizador no resto */
-    @media (min-width: 768px) {
-      .container { flex-direction: row; }
-      .sidebar { width: 300px; height: 100%; }
-      #viewer { flex: 1; height: 100%; }
-    }
-    
-    .sidebar button, .sidebar input { width: 100%; margin-bottom: 8px; padding: 10px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; box-sizing: border-box; }
-    .btn-gold { background: #c5a059; color: #000; }
-    .btn-outline { background: transparent; border: 1px solid #c5a059 !important; color: #fff; transition: 0.2s; }
+    .btn-outline { background: transparent; border: 1px solid #c5a059 !important; color: #fff; padding: 12px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; width: 100%; box-sizing: border-box; }
     .btn-outline.ativo { background: rgba(197, 160, 89, 0.3); border: 2px solid #fff !important; }
     
-    .hidden { display: none; }
+    .link-box { background: #222; color: #fff; font-size: 11px; padding: 10px; border-radius: 6px; border: 1px solid #333; width: 100%; box-sizing: border-box; margin-bottom: 4px; }
+    .hidden-input { display: none; }
+
+    /* Marcador Dourado */
     .custom-marker { width: 24px; height: 24px; background: #c5a059; border: 2px solid #fff; border-radius: 50%; box-shadow: 0 0 15px rgba(197,160,89,0.9); cursor: pointer; }
+    
+    /* Aviso de modo de marcação ativo */
+    #aviso-modo { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); background: #c5a059; color: #000; padding: 10px 20px; border-radius: 20px; font-weight: bold; font-size: 13px; z-index: 30; display: none; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
   </style>
 </head>
 <body>
-  <header><h1>❖ ZAVA TOUR — Editor</h1></header>
-  <div class="container">
-    <div class="sidebar">
-      <input type="file" id="foto" accept="image/jpeg" class="hidden">
-      <button class="btn-gold" onclick="document.getElementById('foto').click()">📂 Carregar foto 360°</button>
-      <button class="btn-outline" id="btn-marcar" onclick="toggleModoMarcacao()">📍 Adicionar marcação</button>
-      <p id="instrucao" style="font-size:12px; color:#c5a059; display:none; margin-top:-4px; margin-bottom:8px;">Toque no local exato da foto para fixar o ponto!</p>
-      
-      <button class="btn-gold" id="btn-salvar" onclick="salvarTour()">💾 Salvar tour</button>
-      <hr style="border-color:#333; margin:16px 0;">
-      <p style="font-size:12px; color:#aaa; margin-bottom:4px;">Link do tour salvo:</p>
-      <input type="text" id="linkTour" readonly placeholder="Ainda não salvo" style="background:#222; color:#fff; font-size:12px;">
-      <button class="btn-outline" onclick="copiarLink()">🔗 Copiar link</button>
-    </div>
-    <div id="viewer">Carregue uma foto 360° para começar a editar.</div>
+  <!-- Tela Inicial -->
+  <div id="welcome-screen">
+    <h1>❖ ZAVA TOUR</h1>
+    <p>Editor de Tour Virtual 360°</p>
+    <input type="file" id="foto" accept="image/jpeg" class="hidden-input">
+    <button class="btn-gold" onclick="document.getElementById('foto').click()">📂 Carregar Foto 360°</button>
+  </div>
+
+  <!-- Visualizador -->
+  <div id="viewer"></div>
+
+  <!-- Aviso flutuante -->
+  <div id="aviso-modo">Toque na imagem para adicionar a marcação</div>
+
+  <!-- Botão do Menu -->
+  <button id="menu-toggle" onclick="toggleMenu()">☰</button>
+
+  <!-- Painel do Menu -->
+  <div id="controls-panel">
+    <div class="controls-title">Opções do Tour</div>
+    
+    <button class="btn-outline" id="btn-marcar" onclick="toggleModoMarcacao()">📍 Adicionar marcação</button>
+    
+    <hr style="border-color:#333; margin:8px 0; width:100%;">
+    
+    <button class="btn-gold" id="btn-salvar" onclick="salvarTour()" style="padding:12px; font-size:14px;">💾 Salvar tour</button>
+    
+    <p style="font-size:11px; color:#aaa; margin:4px 0;">Link gerado:</p>
+    <input type="text" id="linkTour" readonly placeholder="Ainda não salvo" class="link-box">
+    <button class="btn-outline" onclick="copiarLink()" style="padding:8px; font-size:12px;">🔗 Copiar link</button>
   </div>
 
   <script type="importmap">
@@ -75,9 +100,9 @@
     function iniciarViewer(imagem) {
       if (viewer) viewer.destroy();
       
-      const container = document.getElementById('viewer');
-      container.innerHTML = '';
-      container.style.display = 'block';
+      // Esconde a tela inicial e mostra o botão do menu
+      document.getElementById('welcome-screen').classList.add('hidden');
+      document.getElementById('menu-toggle').style.display = 'flex';
 
       viewer = new Viewer({
         container: 'viewer',
@@ -121,16 +146,31 @@
       reader.readAsDataURL(file);
     });
 
+    window.toggleMenu = function() {
+      const panel = document.getElementById('controls-panel');
+      const btn = document.getElementById('menu-toggle');
+      if (panel.classList.contains('open')) {
+        panel.classList.remove('open');
+        btn.innerText = '☰';
+      } else {
+        panel.classList.add('open');
+        btn.innerText = '✕';
+      }
+    }
+
     window.toggleModoMarcacao = function() {
-      if (!document.getElementById('foto').files[0]) return alert('Carregue uma foto primeiro.');
       modoMarcacao = !modoMarcacao;
       const btn = document.getElementById('btn-marcar');
-      const instrucao = document.getElementById('instrucao');
+      const aviso = document.getElementById('aviso-modo');
       
       if (modoMarcacao) {
+        // Fecha o menu para o usuário ver a imagem inteira
+        document.getElementById('controls-panel').classList.remove('open');
+        document.getElementById('menu-toggle').innerText = '☰';
+        
         btn.innerText = '❌ Cancelar marcação';
         btn.classList.add('ativo');
-        instrucao.style.display = 'block';
+        aviso.style.display = 'block';
       } else {
         desativarModoMarcacao();
       }
@@ -139,10 +179,10 @@
     function desativarModoMarcacao() {
       modoMarcacao = false;
       const btn = document.getElementById('btn-marcar');
-      const instrucao = document.getElementById('instrucao');
+      const aviso = document.getElementById('aviso-modo');
       btn.innerText = '📍 Adicionar marcação';
       btn.classList.remove('ativo');
-      instrucao.style.display = 'none';
+      aviso.style.display = 'none';
     }
 
     window.salvarTour = async function() {
@@ -152,19 +192,19 @@
 
       const btnSalvar = document.getElementById('btn-salvar');
       btnSalvar.disabled = true;
-      btnSalvar.innerText = '⏳ Comprimindo... (0%)';
+      btnSalvar.innerText = '⏳ Salvando...';
 
       try {
         const options = {
           maxSizeMB: 4,
           maxWidthOrHeight: 8192,
           useWebWorker: true,
-          onProgress: (progress) => { btnSalvar.innerText = `⏳ Comprimindo... (${Math.round(progress)}%)`; }
+          onProgress: (progress) => { btnSalvar.innerText = `⏳ Comprimindo (${Math.round(progress)}%)`; }
         };
         
         const arquivoComprimido = await imageCompression(file, options);
         
-        btnSalvar.innerText = '⏳ Enviando para a nuvem...';
+        btnSalvar.innerText = '⏳ Enviando...';
         const id = Date.now().toString(36);
         const formData = new FormData();
         formData.append('foto', arquivoComprimido);
