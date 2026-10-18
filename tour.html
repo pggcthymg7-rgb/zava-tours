@@ -25,12 +25,7 @@
     if (!id) {
       document.body.innerHTML = '<h1 style="color:#fff;padding:20px;">Tour não encontrado.</h1>';
     } else {
-      const viewer = pannellum.viewer('panorama', {
-        type: 'equirectangular',
-        panorama: `${R2_URL}/tours/${id}.jpg`,
-        autoLoad: true
-      });
-
+      // 1. Primeiro buscamos as marcações no servidor
       fetch(`/api/carregar/${id}`)
         .then(async r => {
           const texto = await r.text();
@@ -38,26 +33,37 @@
           return JSON.parse(texto);
         })
         .then(dados => {
-          // A MÁGICA ACONTECE AQUI: o arquivo salvo é uma lista direta, não um objeto
-          const lista = Array.isArray(dados) ? dados : dados.marcacoes;
+          const lista = Array.isArray(dados) ? dados : (dados.marcacoes || []);
           
-          if (lista && lista.length > 0) {
-            lista.forEach(m => {
-              viewer.addHotSpot({ 
-                pitch: m.pitch, 
-                yaw: m.yaw, 
-                type: 'info', 
-                text: m.titulo,
-                cssClass: 'custom-hotspot' 
-              });
-            });
-          }
+          // Prepara a lista de pontinhos para o Pannellum
+          const hotSpots = lista.map(m => ({
+            pitch: m.pitch,
+            yaw: m.yaw,
+            type: 'info',
+            text: m.titulo,
+            cssClass: 'custom-hotspot'
+          }));
+
+          // 2. Só agora montamos o visualizador, já entregando os pontinhos prontos
+          pannellum.viewer('panorama', {
+            type: 'equirectangular',
+            panorama: `${R2_URL}/tours/${id}.jpg`,
+            autoLoad: true,
+            hotSpots: hotSpots // Passa os pontos direto na configuração inicial
+          });
         })
         .catch(err => {
+          // Se as marcações falharem, pelo menos a foto carrega
           console.error("Erro:", err);
           const alerta = document.getElementById('alerta');
           alerta.style.display = 'block';
-          alerta.innerHTML = `<strong>Aviso:</strong> A foto carregou, mas as marcações falharam.<br><small>Motivo: ${err.message}</small>`;
+          alerta.innerHTML = `<strong>Aviso:</strong> Marcações falharam.<br><small>Motivo: ${err.message}</small>`;
+          
+          pannellum.viewer('panorama', {
+            type: 'equirectangular',
+            panorama: `${R2_URL}/tours/${id}.jpg`,
+            autoLoad: true
+          });
         });
     }
   </script>
