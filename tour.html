@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Zava Tour</title>
   
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@photo-sphere-viewer/core@5.5.0/index.css" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@photo-sphere-viewer/markers-plugin@5.5.0/index.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@photo-sphere-viewer/core@5.14.2/index.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@photo-sphere-viewer/markers-plugin@5.14.2/index.css" />
   <style>
     body { margin: 0; background: #000; font-family: sans-serif; overflow: hidden; }
     #viewer { width: 100vw; height: 100vh; }
@@ -32,10 +32,10 @@
   <script type="importmap">
     {
       "imports": {
-        "three": "https://esm.sh/three@0.163.0",
-        "three/addons/": "https://esm.sh/three@0.163.0/examples/jsm/",
-        "@photo-sphere-viewer/core": "https://esm.sh/@photo-sphere-viewer/core@5.5.0",
-        "@photo-sphere-viewer/markers-plugin": "https://esm.sh/@photo-sphere-viewer/markers-plugin@5.5.0"
+        "three": "https://esm.sh/three@0.168.0",
+        "three/addons/": "https://esm.sh/three@0.168.0/examples/jsm/",
+        "@photo-sphere-viewer/core": "https://esm.sh/@photo-sphere-viewer/core@5.14.2",
+        "@photo-sphere-viewer/markers-plugin": "https://esm.sh/@photo-sphere-viewer/markers-plugin@5.14.2"
       }
     }
   </script>
@@ -64,8 +64,8 @@
             if (m.type === 'poligono') {
               return {
                 id: 'lote_' + index,
-                polyline: m.polyline, // Já está no formato correto [[yaw, pitch], ...]
-                svgStyle: { stroke: '#c5a059', strokeWidth: '4px' }
+                polyline: m.polyline, 
+                svgStyle: { stroke: '#c5a059', strokeWidth: '4px', pointerEvents: 'none' }
               };
             } else {
               return {
