@@ -62,14 +62,12 @@
           
           const marcadoresFormatados = lista.map((m, index) => {
             if (m.type === 'poligono') {
-              // Renderiza o lote desenhado
               return {
                 id: 'lote_' + index,
-                polygon: m.polygon,
-                svgStyle: { stroke: '#c5a059', strokeWidth: '3px', fill: 'rgba(197, 160, 89, 0.3)' }
+                polyline: m.polyline, // Já está no formato correto [[yaw, pitch], ...]
+                svgStyle: { stroke: '#c5a059', strokeWidth: '4px' }
               };
             } else {
-              // Renderiza o ponto
               return {
                 id: 'marcador_' + index,
                 position: { yaw: m.yaw, pitch: m.pitch },
