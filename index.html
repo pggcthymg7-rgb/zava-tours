@@ -6,7 +6,18 @@
   <title>Zava Tour — Editor</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.css"/>
   <style>
-    /* ... (mantenha o mesmo CSS que você já tem) ... */
+    body { margin: 0; font-family: sans-serif; background: #0b0b0b; color: #fff; }
+    header { padding: 12px 20px; background: #141414; border-bottom: 1px solid #2c2c2c; display: flex; justify-content: space-between; align-items: center; }
+    header h1 { color: #c5a059; font-size: 18px; margin: 0; }
+    .container { display: flex; height: calc(100vh - 60px); flex-direction: column; }
+    @media (min-width: 768px) { .container { flex-direction: row; } .sidebar { width: 300px; } #panorama { flex: 1; } }
+    .sidebar { background: #141414; padding: 16px; overflow-y: auto; }
+    .sidebar button, .sidebar input { width: 100%; margin-bottom: 8px; padding: 10px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; box-sizing: border-box; }
+    .btn-gold { background: #c5a059; color: #000; }
+    .btn-outline { background: transparent; border: 1px solid #c5a059 !important; color: #fff; }
+    #panorama { width: 100%; height: 50vh; background: #000; }
+    @media (min-width: 768px) { #panorama { height: 100%; } }
+    .hidden { display: none; }
   </style>
 </head>
 <body>
@@ -16,7 +27,7 @@
       <input type="file" id="foto" accept="image/jpeg" class="hidden">
       <button class="btn-gold" onclick="document.getElementById('foto').click()">📂 Carregar foto 360°</button>
       <button class="btn-outline" onclick="adicionarMarcacao()">📍 Adicionar marcação</button>
-      <button class="btn-gold" onclick="salvarTour()">💾 Salvar tour</button>
+      <button class="btn-gold" id="btn-salvar" onclick="salvarTour()">💾 Salvar tour</button>
       <hr style="border-color:#333; margin:16px 0;">
       <p style="font-size:12px; color:#aaa; margin-bottom:4px;">Link do tour salvo:</p>
       <input type="text" id="linkTour" readonly placeholder="Ainda não salvo" style="background:#222; color:#fff; font-size:12px;">
@@ -27,7 +38,6 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.js"></script>
-  <!-- Biblioteca de compressão de imagem no navegador -->
   <script src="https://cdn.jsdelivr.net/npm/browser-image-compression@2.0.2/dist/browser-image-compression.js"></script>
   <script>
     let viewer = pannellum.viewer('panorama', {
@@ -67,31 +77,30 @@
       const file = document.getElementById('foto').files[0];
       if (!file) return alert('Carregue uma foto primeiro.');
 
-      // 1. Comprimir a imagem antes de enviar (reduz de ~20 MB para ~2-4 MB)
-      alert('Comprimindo imagem... isso pode levar alguns segundos.');
-      let arquivoComprimido;
+      const btnSalvar = document.getElementById('btn-salvar');
+      btnSalvar.disabled = true;
+      btnSalvar.innerText = '⏳ Comprimindo... (0%)';
+
       try {
         const options = {
-          maxSizeMB: 4,           // Tamanho máximo final (4 MB)
-          maxWidthOrHeight: 8192, // Resolução máxima (mantém qualidade 360°)
-          useWebWorker: true
+          maxSizeMB: 4,
+          maxWidthOrHeight: 8192,
+          useWebWorker: true,
+          onProgress: (progress) => {
+            btnSalvar.innerText = `⏳ Comprimindo... (${Math.round(progress)}%)`;
+          }
         };
-        arquivoComprimido = await imageCompression(file, options);
-      } catch (err) {
-        console.error('Erro na compressão:', err);
-        alert('Erro ao comprimir a imagem. Tentando enviar o original...');
-        arquivoComprimido = file;
-      }
+        
+        // Comprime a imagem
+        const arquivoComprimido = await imageCompression(file, options);
+        
+        btnSalvar.innerText = '⏳ Enviando para a nuvem...';
+        const id = Date.now().toString(36);
+        const formData = new FormData();
+        formData.append('foto', arquivoComprimido);
+        formData.append('marcacoes', JSON.stringify(marcacoes));
 
-      const id = Date.now().toString(36);
-
-      const formData = new FormData();
-      formData.append('foto', arquivoComprimido);
-      formData.append('marcacoes', JSON.stringify(marcacoes));
-
-      alert('Salvando... aguarde.');
-
-      try {
+        // Envia para o servidor
         const resp = await fetch(`/api/salvar/${id}`, {
           method: 'POST',
           body: formData
@@ -105,8 +114,12 @@
           alert('Erro ao salvar. Tente novamente.');
         }
       } catch (err) {
-        alert('Erro de conexão ao salvar.');
+        alert('Erro ao processar ou enviar a imagem.');
         console.error(err);
+      } finally {
+        // Restaura o botão ao normal
+        btnSalvar.disabled = false;
+        btnSalvar.innerText = '💾 Salvar tour';
       }
     }
 
