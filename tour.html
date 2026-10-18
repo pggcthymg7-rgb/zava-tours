@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zava Tour</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.css"/>
+  <style>
+    body { margin: 0; background: #000; }
+    #panorama { width: 100vw; height: 100vh; }
+    .erro { color: #fff; padding: 20px; text-align: center; font-family: sans-serif; }
+  </style>
+</head>
+<body>
+  <div id="panorama"></div>
+  <script src="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.js"></script>
+  <script>
+    // Link do seu R2 que você acabou de copiar
+    const R2_URL = "https://pub-16d4012b923340a3876d0dd16e806393.r2.dev";
+    
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get('id');
+
+    if (!id) {
+      document.body.innerHTML = '<h1 class="erro">Tour não encontrado.</h1>';
+    } else {
+      fetch(`/api/carregar/${id}`)
+        .then(r => r.json())
+        .then(dados => {
+          const viewer = pannellum.viewer('panorama', {
+            type: 'equirectangular',
+            panorama: `${R2_URL}/tours/${id}.jpg`,
+            autoLoad: true
+          });
+
+          dados.marcacoes.forEach(m => {
+            viewer.addHotSpot({ pitch: m.pitch, yaw: m.yaw, type: 'info', text: m.titulo });
+          });
+        })
+        .catch(err => {
+          document.body.innerHTML = '<h1 class="erro">Erro ao carregar o tour ou tour não encontrado.</h1>';
+          console.error(err);
+        });
+    }
+  </script>
+</body>
+</html>
