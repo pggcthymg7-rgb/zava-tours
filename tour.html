@@ -4,16 +4,17 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Zava Tour</title>
+  
+  <!-- Polyfill para corrigir carregamento no Safari/iOS -->
+  <script async src="https://ga.jspm.io/npm:es-module-shims@1.10.0/dist/es-module-shims.js"></script>
+
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@photo-sphere-viewer/core@5.5.0/index.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@photo-sphere-viewer/markers-plugin@5.5.0/index.css" />
   <style>
     body { margin: 0; background: #000; font-family: sans-serif; }
     #viewer { width: 100vw; height: 100vh; }
     #alerta { position: absolute; top: 10px; left: 10px; right: 10px; background: rgba(200, 0, 0, 0.9); color: white; padding: 12px; z-index: 1000; border-radius: 8px; display: none; text-align: center; font-size: 14px; }
-    .custom-marker {
-      width: 24px; height: 24px; background: #c5a059; border: 2px solid #fff;
-      border-radius: 50%; box-shadow: 0 0 15px rgba(197,160,89,0.9); cursor: pointer;
-    }
+    .custom-marker { width: 24px; height: 24px; background: #c5a059; border: 2px solid #fff; border-radius: 50%; box-shadow: 0 0 15px rgba(197,160,89,0.9); cursor: pointer; }
     .psv-marker-tooltip { background: rgba(0,0,0,0.8) !important; color: white !important; border-radius: 6px; font-weight: bold; }
   </style>
 </head>
@@ -24,8 +25,8 @@
   <script type="importmap">
     {
       "imports": {
-        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
-        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
+        "three": "https://cdn.jsdelivr.net/npm/three@0.163.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.163.0/examples/jsm/",
         "@photo-sphere-viewer/core": "https://cdn.jsdelivr.net/npm/@photo-sphere-viewer/core@5.5.0/index.js",
         "@photo-sphere-viewer/markers-plugin": "https://cdn.jsdelivr.net/npm/@photo-sphere-viewer/markers-plugin@5.5.0/index.js"
       }
