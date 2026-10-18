@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zava Tour — Editor</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.css"/>
+  <style>
+    body { margin: 0; font-family: sans-serif; background: #0b0b0b; color: #fff; }
+    header { padding: 12px 20px; background: #141414; border-bottom: 1px solid #2c2c2c; display: flex; justify-content: space-between; align-items: center; }
+    header h1 { color: #c5a059; font-size: 18px; margin: 0; }
+    .container { display: flex; height: calc(100vh - 60px); flex-direction: column; }
+    @media (min-width: 768px) { .container { flex-direction: row; } .sidebar { width: 300px; } #panorama { flex: 1; } }
+    .sidebar { background: #141414; padding: 16px; overflow-y: auto; }
+    .sidebar button, .sidebar input { width: 100%; margin-bottom: 8px; padding: 10px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; box-sizing: border-box; }
+    .btn-gold { background: #c5a059; color: #000; }
+    .btn-outline { background: transparent; border: 1px solid #c5a059 !important; color: #fff; }
+    #panorama { width: 100%; height: 50vh; background: #000; }
+    @media (min-width: 768px) { #panorama { height: 100%; } }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <header><h1>❖ ZAVA TOUR — Editor</h1></header>
+  <div class="container">
+    <div class="sidebar">
+      <input type="file" id="foto" accept="image/jpeg" class="hidden">
+      <button class="btn-gold" onclick="document.getElementById('foto').click()">📂 Carregar foto 360°</button>
+      <button class="btn-outline" onclick="adicionarMarcacao()">📍 Adicionar marcação</button>
+      <button class="btn-gold" onclick="salvarTour()">💾 Salvar tour</button>
+      <hr style="border-color:#333; margin:16px 0;">
+      <p style="font-size:12px; color:#aaa; margin-bottom:4px;">Link do tour salvo:</p>
+      <input type="text" id="linkTour" readonly placeholder="Ainda não salvo" style="background:#222; color:#fff; font-size:12px;">
+      <button class="btn-outline" onclick="copiarLink()">🔗 Copiar link</button>
+      <p style="font-size:11px; color:#666; margin-top:20px;">Dica: Gire a imagem, adicione as marcações e salve para gerar o link do cliente.</p>
+    </div>
+    <div id="panorama"></div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.js"></script>
+  <script>
+    let viewer = pannellum.viewer('panorama', {
+      type: 'equirectangular',
+      panorama: 'https://pannellum.org/images/alma.jpg',
+      autoLoad: true
+    });
+
+    let marcacoes = [];
+
+    document.getElementById('foto').addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(ev) {
+        viewer.destroy();
+        viewer = pannellum.viewer('panorama', {
+          type: 'equirectangular',
+          panorama: ev.target.result,
+          autoLoad: true
+        });
+        marcacoes = [];
+      };
+      reader.readAsDataURL(file);
+    });
+
+    function adicionarMarcacao() {
+      const titulo = prompt('Título da marcação (ex: Lote 04, Portaria):');
+      if (!titulo) return;
+      const pitch = viewer.getPitch();
+      const yaw = viewer.getYaw();
+      viewer.addHotSpot({ pitch, yaw, type: 'info', text: titulo, cssClass: 'custom-hotspot' });
+      marcacoes.push({ pitch, yaw, titulo });
+    }
+
+    async function salvarTour() {
+      const file = document.getElementById('foto').files[0];
+      if (!file) return alert('Carregue uma foto primeiro.');
+      
+      const id = Date.now().toString(36); 
+      
+      const formData = new FormData();
+      formData.append('foto', file);
+      formData.append('marcacoes', JSON.stringify(marcacoes));
+
+      alert('Salvando... aguarde.');
+
+      try {
+        const resp = await fetch(`/api/salvar/${id}`, {
+          method: 'POST',
+          body: formData
+        });
+
+        if (resp.ok) {
+          const link = `${window.location.origin}/tour.html?id=${id}`;
+          document.getElementById('linkTour').value = link;
+          alert('Tour salvo com sucesso!');
+        } else {
+          alert('Erro ao salvar. Tente novamente.');
+        }
+      } catch (err) {
+        alert('Erro de conexão ao salvar.');
+        console.error(err);
+      }
+    }
+
+    function copiarLink() {
+      const input = document.getElementById('linkTour');
+      if (!input.value) return alert('Salve o tour primeiro.');
+      navigator.clipboard.writeText(input.value);
+      alert('Link copiado!');
+    }
+  </script>
+</body>
+</html>
