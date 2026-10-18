@@ -14,7 +14,6 @@
       width: 24px; height: 24px; background: #c5a059; border: 2px solid #fff;
       border-radius: 50%; box-shadow: 0 0 15px rgba(197,160,89,0.9); cursor: pointer;
     }
-    /* Balão de texto do PSV */
     .psv-marker-tooltip { background: rgba(0,0,0,0.8) !important; color: white !important; border-radius: 6px; font-weight: bold; }
   </style>
 </head>
@@ -25,6 +24,8 @@
   <script type="importmap">
     {
       "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
         "@photo-sphere-viewer/core": "https://cdn.jsdelivr.net/npm/@photo-sphere-viewer/core@5.5.0/index.js",
         "@photo-sphere-viewer/markers-plugin": "https://cdn.jsdelivr.net/npm/@photo-sphere-viewer/markers-plugin@5.5.0/index.js"
       }
@@ -51,7 +52,6 @@
         .then(dados => {
           const lista = Array.isArray(dados) ? dados : (dados.marcacoes || []);
           
-          // Converte para o formato de marcadores do PSV
           const marcadoresFormatados = lista.map((m, index) => ({
             id: 'marcador_' + index,
             position: { yaw: m.yaw, pitch: m.pitch },
@@ -71,7 +71,6 @@
           document.getElementById('alerta').style.display = 'block';
           document.getElementById('alerta').innerHTML = `<strong>Aviso:</strong> Marcações falharam.<br><small>Motivo: ${err.message}</small>`;
           
-          // Tenta carregar só a foto se der erro nos marcadores
           new Viewer({ container: 'viewer', panorama: `${R2_URL}/tours/${id}.jpg` });
         });
     }
