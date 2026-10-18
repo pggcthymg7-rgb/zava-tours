@@ -32,9 +32,25 @@
     .link-box { background: #222; color: #fff; font-size: 11px; padding: 10px; border-radius: 6px; border: 1px solid #333; width: 100%; box-sizing: border-box; margin-bottom: 4px; }
     .hidden-input { display: none; }
 
+    /* Marcadores */
     .custom-marker { width: 20px; height: 20px; background: #c5a059; border: 2px solid #fff; border-radius: 50%; box-shadow: 0 0 10px rgba(197,160,89,0.9); cursor: pointer; }
     .dot-marker { width: 14px; height: 14px; background: #fff; border: 2px solid #c5a059; border-radius: 50%; box-shadow: 0 0 5px #000; pointer-events: none; }
     
+    /* Estilo do Texto em Perspectiva */
+    .text-marker { 
+      background: rgba(11, 11, 11, 0.85); 
+      color: #c5a059; 
+      border: 1px solid #c5a059; 
+      padding: 6px 12px; 
+      border-radius: 4px; 
+      font-weight: bold; 
+      font-size: 14px; 
+      white-space: nowrap; 
+      cursor: pointer; 
+      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+      backdrop-filter: blur(4px);
+    }
+
     #aviso-modo { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); background: #c5a059; color: #000; padding: 10px 20px; border-radius: 20px; font-weight: bold; font-size: 13px; z-index: 9997; display: none; box-shadow: 0 4px 10px rgba(0,0,0,0.5); white-space: nowrap; pointer-events: none; }
     
     #action-buttons { position: absolute; bottom: 90px; left: 50%; transform: translateX(-50%); z-index: 9999; display: none; gap: 10px; touch-action: manipulation; pointer-events: auto; }
@@ -48,13 +64,9 @@
     #panel-edicao h3 { margin: 0; font-size: 16px; color: #c5a059; margin-bottom: 10px; }
     .btn-delete { background: #f44336; color: #fff; border: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; width: 100%; margin-bottom: 8px; touch-action: manipulation; }
     .btn-close-panel { background: #333; color: #fff; border: none; padding: 8px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; width: 100%; touch-action: manipulation; }
-
-    #erro-global { display: none; position: fixed; top: 0; left: 0; right: 0; background: red; color: white; padding: 15px; z-index: 10000; text-align: center; font-weight: bold; }
   </style>
 </head>
 <body>
-  <div id="erro-global"></div>
-
   <div id="welcome-screen">
     <h1 id="welcome-title">❖ ZAVA TOUR</h1>
     <p id="welcome-desc">Editor de Tour Virtual 360°</p>
@@ -82,6 +94,7 @@
   <div id="controls-panel">
     <div class="controls-title">Opções do Tour</div>
     <button class="btn-outline" id="btn-marcar" onclick="toggleModoMarcacao(event)">📍 Adicionar Ponto</button>
+    <button class="btn-outline" id="btn-texto" onclick="toggleModoTexto(event)">🔤 Adicionar Texto</button>
     <button class="btn-outline" id="btn-desenhar" onclick="toggleModoDesenho(event)">✏️ Desenhar Lote</button>
     <hr style="border-color:#333; margin:8px 0; width:100%;">
     <button class="btn-gold" id="btn-salvar" onclick="salvarTour(event)" style="padding:12px; font-size:14px;">💾 Salvar tour</button>
@@ -93,8 +106,7 @@
   <script>
     window.onerror = function(msg) {
       const e = document.getElementById('erro-global');
-      e.style.display = 'block';
-      e.innerText = 'Erro no sistema: ' + msg;
+      if(e) { e.style.display = 'block'; e.innerText = 'Erro no sistema: ' + msg; }
     };
   </script>
 
@@ -117,6 +129,7 @@
     let viewer = null;
     let marcacoes = [];
     let modoPonto = false;
+    let modoTexto = false;
     let modoDesenho = false;
     let pontosPoligonoAtual = [];
     let selectedMarkerId = null;
@@ -156,6 +169,21 @@
             }
             desativarModos();
           }
+
+          if (modoTexto) {
+            const conteudo = prompt('Digite o texto (ex: Lote 04 - 12x30m):');
+            if (conteudo) {
+              const id = 'texto_' + Date.now();
+              markersPlugin.addMarker({
+                id: id, 
+                position: { yaw, pitch }, 
+                html: `<div class="text-marker">${conteudo}</div>`, 
+                anchor: 'center center'
+              });
+              marcacoes.push({ id: id, type: 'texto', yaw, pitch, conteudo });
+            }
+            desativarModos();
+          }
           
           if (modoDesenho) {
             pontosPoligonoAtual.push({ yaw, pitch });
@@ -169,10 +197,19 @@
         });
 
         markersPlugin.addEventListener('select-marker', ({ marker }) => {
-          if (modoPonto || modoDesenho) return;
+          if (modoPonto || modoTexto || modoDesenho) return;
+          
           selectedMarkerId = marker.id;
           document.getElementById('panel-edicao').style.display = 'block';
-          document.getElementById('edit-title').innerText = (marker.config.data && marker.config.data.titulo) ? marker.config.data.titulo : 'Lote Desenhado';
+          
+          if(marker.config.data && marker.config.data.titulo) {
+            document.getElementById('edit-title').innerText = marker.config.data.titulo;
+          } else if (marker.config.html) {
+            // Se for um texto, pega o conteúdo do HTML para mostrar no painel
+            document.getElementById('edit-title').innerText = marker.config.html.replace(/<[^>]*>?/gm, '');
+          } else {
+            document.getElementById('edit-title').innerText = 'Lote Desenhado';
+          }
         });
       } catch (err) {
         alert("Erro ao carregar o visualizador: " + err.message);
@@ -190,12 +227,11 @@
       document.getElementById('welcome-desc').innerText = 'Aguarde, preparando sua foto.';
       document.getElementById('btn-load').style.display = 'none';
 
-      // Verifica a proporção da imagem para avisar o usuário
       const img = new Image();
       img.onload = async function() {
         const proporcao = img.width / img.height;
         if (proporcao < 1.9 || proporcao > 2.1) {
-           alert("⚠️ Aviso: A proporção da sua foto não é 2:1 (equiretangular). O horizonte pode parecer arredondado ou deformado. Para um resultado perfeito, exporte a foto do drone no formato panorâmico 360° original.");
+           alert("⚠️ Aviso: A proporção da sua foto não é 2:1 (equiretangular). O horizonte pode parecer arredondado ou deformado.");
         }
         
         try {
@@ -231,13 +267,22 @@
     window.toggleModoMarcacao = function(event) {
       if(event) { event.stopPropagation(); }
       if (modoDesenho) cancelarDesenho();
+      if (modoTexto) desativarModos();
       modoPonto = !modoPonto;
+      atualizarBotoesUI();
+    }
+
+    window.toggleModoTexto = function(event) {
+      if(event) { event.stopPropagation(); }
+      if (modoDesenho) cancelarDesenho();
+      if (modoPonto) desativarModos();
+      modoTexto = !modoTexto;
       atualizarBotoesUI();
     }
 
     window.toggleModoDesenho = function(event) {
       if(event) { event.stopPropagation(); }
-      if (modoPonto) desativarModos();
+      if (modoPonto || modoTexto) desativarModos();
       
       if (modoDesenho) {
         cancelarDesenho(); 
@@ -274,7 +319,6 @@
 
           const poligonoId = 'lote_' + Date.now();
           
-          // Na versão 5.14, adicionamos pointerEvents: 'none' para não travar a navegação ao tocar na linha
           markersPlugin.addMarker({
             id: poligonoId,
             polyline: linePoints, 
@@ -337,19 +381,35 @@
 
     function desativarModos() {
       modoPonto = false;
+      modoTexto = false;
       modoDesenho = false;
       atualizarBotoesUI();
     }
 
     function atualizarBotoesUI() {
       const btnMarcar = document.getElementById('btn-marcar');
+      const btnTexto = document.getElementById('btn-texto');
       const btnDesenhar = document.getElementById('btn-desenhar');
       const aviso = document.getElementById('aviso-modo');
+      
+      btnMarcar.classList.remove('ativo');
+      btnTexto.classList.remove('ativo');
+      btnDesenhar.classList.remove('ativo');
+      btnMarcar.innerText = '📍 Adicionar Ponto';
+      btnTexto.innerText = '🔤 Adicionar Texto';
+      btnDesenhar.innerText = '✏️ Desenhar Lote';
       
       if (modoPonto) {
         btnMarcar.innerText = '❌ Cancelar Ponto';
         btnMarcar.classList.add('ativo');
         aviso.innerText = 'Toque na imagem para adicionar o ponto';
+        aviso.style.display = 'block';
+        document.getElementById('controls-panel').classList.remove('open');
+        document.getElementById('menu-toggle').innerText = '☰';
+      } else if (modoTexto) {
+        btnTexto.innerText = '❌ Cancelar Texto';
+        btnTexto.classList.add('ativo');
+        aviso.innerText = 'Toque na imagem para posicionar o texto';
         aviso.style.display = 'block';
         document.getElementById('controls-panel').classList.remove('open');
         document.getElementById('menu-toggle').innerText = '☰';
@@ -361,10 +421,6 @@
         document.getElementById('controls-panel').classList.remove('open');
         document.getElementById('menu-toggle').innerText = '☰';
       } else {
-        btnMarcar.innerText = '📍 Adicionar Ponto';
-        btnDesenhar.innerText = '✏️ Desenhar Lote';
-        btnMarcar.classList.remove('ativo');
-        btnDesenhar.classList.remove('ativo');
         aviso.style.display = 'none';
         document.getElementById('action-buttons').style.display = 'none';
       }
