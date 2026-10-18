@@ -125,7 +125,7 @@
     let modoDesenho = false;
     let pontosPoligonoAtual = [];
     let selectedMarkerId = null;
-    let arquivoComprimidoGlobal = null; // Guarda a foto comprimida
+    let arquivoComprimidoGlobal = null;
 
     function iniciarViewer(imagem) {
       if (viewer) viewer.destroy();
@@ -187,7 +187,6 @@
       }
     }
 
-    // OTIMIZAÇÃO: Comprime a imagem antes de abrir no editor
     document.getElementById('foto').addEventListener('change', async function(e) {
       const file = e.target.files[0];
       if (!file) return;
@@ -251,7 +250,11 @@
         const markersPlugin = viewer.getPlugin(MarkersPlugin);
         const lastDotId = 'dot_' + pontosPoligonoAtual.length;
         pontosPoligonoAtual.pop();
-        if (markersPlugin.getMarker(lastDotId)) markersPlugin.removeMarker(lastDotId);
+        try {
+          if (markersPlugin.getMarker(lastDotId)) {
+            markersPlugin.removeMarker(lastDotId);
+          }
+        } catch (e) {}
       }
     }
 
@@ -263,7 +266,6 @@
         const markersPlugin = viewer.getPlugin(MarkersPlugin);
         
         try {
-          // Converte para o formato correto [[yaw, pitch], ...]
           const linePoints = pontosPoligonoAtual.map(p => [p.yaw, p.pitch]);
           linePoints.push([pontosPoligonoAtual[0].yaw, pontosPoligonoAtual[0].pitch]); 
 
@@ -277,11 +279,24 @@
           
           marcacoes.push({ id: poligonoId, type: 'poligono', polyline: linePoints });
           
-          limparTemporarios();
+          // Limpeza segura: conta exatamente quantos pontos foram criados
+          const qtdPontos = pontosPoligonoAtual.length;
+          pontosPoligonoAtual = []; // Esvazia a lista
+          
+          for (let i = 1; i <= qtdPontos; i++) {
+             try {
+                if (markersPlugin.getMarker('dot_' + i)) {
+                   markersPlugin.removeMarker('dot_' + i);
+                }
+             } catch(err) {
+                // Ignora se não achar
+             }
+          }
+
           desativarModos();
         } catch (e) {
-          alert("Erro interno ao desenhar: " + e.message);
           console.error(e);
+          alert("Erro interno ao desenhar: " + e.message);
         }
       } else {
         alert('Você precisa tocar em pelo menos 3 cantos.');
@@ -311,10 +326,16 @@
 
     function limparTemporarios() {
       const markersPlugin = viewer.getPlugin(MarkersPlugin);
-      for(let i=1; i <= 50; i++) {
-        if(markersPlugin.getMarker('dot_' + i)) markersPlugin.removeMarker('dot_' + i);
-      }
+      const qtd = pontosPoligonoAtual.length;
       pontosPoligonoAtual = [];
+      
+      for (let i = 1; i <= qtd; i++) {
+        try {
+          if (markersPlugin.getMarker('dot_' + i)) {
+            markersPlugin.removeMarker('dot_' + i);
+          }
+        } catch(e) {}
+      }
     }
 
     function desativarModos() {
@@ -364,7 +385,6 @@
       try {
         const id = Date.now().toString(36);
         const formData = new FormData();
-        // Usa a foto que já foi comprimida no início para não travar o celular
         formData.append('foto', arquivoComprimidoGlobal);
         formData.append('marcacoes', JSON.stringify(marcacoes));
 
