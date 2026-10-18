@@ -15,14 +15,14 @@
     #welcome-screen h1 { color: #c5a059; font-size: 32px; margin-bottom: 8px; letter-spacing: 2px; }
     #welcome-screen p { color: #aaa; font-size: 14px; margin-bottom: 30px; }
     
-    .btn-gold { background: #c5a059; color: #000; font-size: 16px; padding: 16px 32px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(197,160,89,0.3); transition: 0.2s; text-align: center; touch-action: manipulation; }
+    .btn-g0old { background: #c5a059; color: #000; font-size: 16px; padding: 16px 32px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(197,160,89,0.3); transition: 0.2s; text-align: center; touch-action: manipulation; }
     .btn-gold:active { transform: scale(0.95); }
     .hidden { display: none !important; }
 
-    #menu-toggle { position: absolute; bottom: 20px; right: 20px; z-index: 50; width: 60px; height: 60px; border-radius: 50%; background: #c5a059; color: #000; border: none; font-size: 24px; font-weight: bold; box-shadow: 0 4px 15px rgba(0,0,0,0.6); cursor: pointer; display: none; align-items: center; justify-content: center; transition: 0.2s; touch-action: manipulation; }
+    #menu-toggle { position: absolute; bottom: 20px; right: 20px; z-index: 9999; width: 60px; height: 60px; border-radius: 50%; background: #c5a059; color: #000; border: none; font-size: 24px; font-weight: bold; box-shadow:  4px 15px rgba(0,0,0,0.6); cursor: pointer; display: none; align-items: center; justify-content: center; transition: 0.2s; touch-action: manipulation; }
     #menu-toggle:active { transform: scale(0.9); }
 
-    #controls-panel { position: absolute; bottom: 90px; right: 20px; width: 280px; background: rgba(20, 20, 20, 0.95); border: 1px solid #2c2c2c; border-radius: 12px; padding: 16px; z-index: 40; display: none; flex-direction: column; gap: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); backdrop-filter: blur(10px); touch-action: manipulation; }
+    #controls-panel { position: absolute; bottom: 90px; right: 20px; width: 280px; background: rgba(20, 20, 20, 0.95); border: 1px solid #2c2c2c; border-radius: 12px; padding: 16px; z-index: 9998; display: none; flex-direction: column; gap: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); backdrop-filter: blur(10px); touch-action: manipulation; }
     #controls-panel.open { display: flex; }
     
     .controls-title { color: #c5a059; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; font-weight: bold; margin-bottom: 4px; border-bottom: 1px solid #333; padding-bottom: 4px; }
@@ -35,16 +35,17 @@
     .custom-marker { width: 20px; height: 20px; background: #c5a059; border: 2px solid #fff; border-radius: 50%; box-shadow: 0 0 10px rgba(197,160,89,0.9); cursor: pointer; }
     .dot-marker { width: 14px; height: 14px; background: #fff; border: 2px solid #c5a059; border-radius: 50%; box-shadow: 0 0 5px #000; pointer-events: none; }
     
-    #aviso-modo { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); background: #c5a059; color: #000; padding: 10px 20px; border-radius: 20px; font-weight: bold; font-size: 13px; z-index: 30; display: none; box-shadow: 0 4px 10px rgba(0,0,0,0.5); white-space: nowrap; pointer-events: none; }
+    #aviso-modo { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); background: #c5a059; color: #000; padding: 10px 20px; border-radius: 20px; font-weight: bold; font-size: 13px; z-index: 9997; display: none; box-shadow: 0 4px 10px rgba(0,0,0,0.5); white-space: nowrap; pointer-events: none; }
     
-    #action-buttons { position: absolute; bottom: 90px; left: 50%; transform: translateX(-50%); z-index: 60; display: none; gap: 10px; touch-action: manipulation; }
-    .btn-action { color: #fff; padding: 14px 20px; border-radius: 30px; border: none; font-weight: bold; font-size: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.6); cursor: pointer; touch-action: manipulation; white-space: nowrap; }
+    /* Painel de botões durante o desenho (Z-index alto para não ser bloqueado) */
+    #action-buttons { position: absolute; bottom: 90px; left: 50%; transform: translateX(-50%); z-index: 9999; display: none; gap: 10px; touch-action: manipulation; pointer-events: auto; }
+    .btn-action { color: #fff; padding: 14px 20px; border-radius: 30px; border: none; font-weight: bold; font-size: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.6); cursor: pointer; touch-action: manipulation; white-space: nowrap; pointer-events: auto; }
     .btn-action:active { transform: scale(0.95); }
     .btn-undo { background: #ff9800; }
     .btn-done { background: #4CAF50; }
     .btn-cancel { background: #f44336; }
 
-    #panel-edicao { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); background: rgba(20, 20, 20, 0.95); color: #fff; padding: 16px 24px; border-radius: 12px; border: 1px solid #c5a059; box-shadow: 0 10px 30px rgba(0,0,0,0.8); z-index: 100; display: none; text-align: center; min-width: 200px; backdrop-filter: blur(10px); touch-action: manipulation; }
+    #panel-edicao { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); background: rgba(20, 20, 20, 0.95); color: #fff; padding: 16px 24px; border-radius: 12px; border: 1px solid #c5a059; box-shadow: 0 10px 30px rgba(0,0,0,0.8); z-index: 9999; display: none; text-align: center; min-width: 200px; backdrop-filter: blur(10px); touch-action: manipulation; }
     #panel-edicao h3 { margin: 0; font-size: 16px; color: #c5a059; margin-bottom: 10px; }
     .btn-delete { background: #f44336; color: #fff; border: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; width: 100%; margin-bottom: 8px; touch-action: manipulation; }
     .btn-close-panel { background: #333; color: #fff; border: none; padding: 8px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; width: 100%; touch-action: manipulation; }
@@ -62,28 +63,28 @@
   <div id="aviso-modo"></div>
   
   <div id="action-buttons">
-    <button class="btn-action btn-undo" onpointerdown="desfazerPonto(event)">↩️ Desfazer</button>
-    <button class="btn-action btn-done" onpointerdown="finalizarPoligono(event)">✅ Concluir</button>
-    <button class="btn-action btn-cancel" onpointerdown="cancelarDesenho(event)">❌</button>
+    <button class="btn-action btn-undo" onclick="desfazerPonto(event)">↩️ Desfazer</button>
+    <button class="btn-action btn-done" onclick="finalizarPoligono(event)">✅ Concluir</button>
+    <button class="btn-action btn-cancel" onclick="cancelarDesenho(event)">❌</button>
   </div>
 
   <div id="panel-edicao">
     <h3 id="edit-title">Elemento Selecionado</h3>
-    <button class="btn-delete" onpointerdown="apagarSelecionado(event)">🗑️ Apagar Elemento</button>
-    <button class="btn-close-panel" onpointerdown="fecharPainelEdicao(event)">Fechar</button>
+    <button class="btn-delete" onclick="apagarSelecionado(event)">🗑️ Apagar Elemento</button>
+    <button class="btn-close-panel" onclick="fecharPainelEdicao(event)">Fechar</button>
   </div>
 
-  <button id="menu-toggle" onpointerdown="toggleMenu(event)">☰</button>
+  <button id="menu-toggle" onclick="toggleMenu(event)">☰</button>
 
   <div id="controls-panel">
     <div class="controls-title">Opções do Tour</div>
-    <button class="btn-outline" id="btn-marcar" onpointerdown="toggleModoMarcacao(event)">📍 Adicionar Ponto</button>
-    <button class="btn-outline" id="btn-desenhar" onpointerdown="toggleModoDesenho(event)">✏️ Desenhar Lote</button>
+    <button class="btn-outline" id="btn-marcar" onclick="toggleModoMarcacao(event)">📍 Adicionar Ponto</button>
+    <button class="btn-outline" id="btn-desenhar" onclick="toggleModoDesenho(event)">✏️ Desenhar Lote</button>
     <hr style="border-color:#333; margin:8px 0; width:100%;">
-    <button class="btn-gold" id="btn-salvar" onpointerdown="salvarTour(event)" style="padding:12px; font-size:14px;">💾 Salvar tour</button>
+    <button class="btn-gold" id="btn-salvar" onclick="salvarTour(event)" style="padding:12px; font-size:14px;">💾 Salvar tour</button>
     <p style="font-size:11px; color:#aaa; margin:4px 0;">Link gerado:</p>
     <input type="text" id="linkTour" readonly placeholder="Ainda não salvo" class="link-box">
-    <button class="btn-outline" onpointerdown="copiarLink(event)" style="padding:8px; font-size:12px;">🔗 Copiar link</button>
+    <button class="btn-outline" onclick="copiarLink(event)" style="padding:8px; font-size:12px;">🔗 Copiar link</button>
   </div>
 
   <script type="importmap">
@@ -109,7 +110,6 @@
     let pontosPoligonoAtual = [];
     let tempPolygonId = 'temp_poly';
     let selectedMarkerId = null;
-    let processandoClique = false; // Trava de segurança
 
     function iniciarViewer(imagem) {
       if (viewer) viewer.destroy();
@@ -121,14 +121,14 @@
         container: 'viewer',
         panorama: imagem,
         navbar: false,
-        touchmoveTwoFingers: false, // Permite girar com 1 dedo (mobile)
+        touchmoveTwoFingers: false, // 1 dedo para girar
         plugins: [[MarkersPlugin, { markers: [] }]]
       });
 
       const markersPlugin = viewer.getPlugin(MarkersPlugin);
 
       viewer.addEventListener('click', ({ data }) => {
-        if (!data || typeof data.yaw === 'undefined' || processandoClique) return;
+        if (!data || typeof data.yaw === 'undefined') return;
         
         fecharPainelEdicao();
         const { yaw, pitch } = data;
@@ -148,7 +148,6 @@
         if (modoDesenho) {
           pontosPoligonoAtual.push({ yaw, pitch });
           
-          // Adiciona o pontinho visual
           markersPlugin.addMarker({
             id: 'dot_' + pontosPoligonoAtual.length,
             position: { yaw, pitch },
@@ -156,16 +155,20 @@
             anchor: 'center center'
           });
 
-          // Se tiver 3 ou mais, desenha a área
+          // Tenta desenhar a área viva, se der erro (linhas cruzadas) ignora e espera o botão concluir
           if (pontosPoligonoAtual.length >= 3) {
-            if (markersPlugin.getMarker(tempPolygonId)) {
-              markersPlugin.updateMarker({ id: tempPolygonId, polygon: pontosPoligonoAtual });
-            } else {
-              markersPlugin.addMarker({
-                id: tempPolygonId,
-                polygon: pontosPoligonoAtual,
-                svgStyle: { stroke: '#c5a059', strokeWidth: '3px', fill: 'rgba(197, 160, 89, 0.3)', pointerEvents: 'none' }
-              });
+            try {
+              if (markersPlugin.getMarker(tempPolygonId)) {
+                markersPlugin.updateMarker({ id: tempPolygonId, polygon: pontosPoligonoAtual });
+              } else {
+                markersPlugin.addMarker({
+                  id: tempPolygonId,
+                  polygon: pontosPoligonoAtual,
+                  svgStyle: { stroke: '#c5a059', strokeWidth: '3px', fill: 'rgba(197, 160, 89, 0.3)', pointerEvents: 'none' }
+                });
+              }
+            } catch(e) {
+              // Ignora silenciosamente o erro de desenho temporário
             }
           }
         }
@@ -198,7 +201,7 @@
     });
 
     window.toggleMenu = function(event) {
-      if(event) { event.preventDefault(); event.stopPropagation(); }
+      if(event) { event.stopPropagation(); }
       const panel = document.getElementById('controls-panel');
       const btn = document.getElementById('menu-toggle');
       panel.classList.toggle('open');
@@ -206,14 +209,14 @@
     }
 
     window.toggleModoMarcacao = function(event) {
-      if(event) { event.preventDefault(); event.stopPropagation(); }
+      if(event) { event.stopPropagation(); }
       if (modoDesenho) cancelarDesenho();
       modoPonto = !modoPonto;
       atualizarBotoesUI();
     }
 
     window.toggleModoDesenho = function(event) {
-      if(event) { event.preventDefault(); event.stopPropagation(); }
+      if(event) { event.stopPropagation(); }
       if (modoPonto) desativarModos();
       
       if (modoDesenho) {
@@ -227,26 +230,21 @@
     }
 
     window.desfazerPonto = function(event) {
-      if(event) { event.preventDefault(); event.stopPropagation(); }
+      if(event) { event.stopPropagation(); }
       
       if (pontosPoligonoAtual.length > 0) {
         const markersPlugin = viewer.getPlugin(MarkersPlugin);
-        
-        // Pega o ID do último ponto que foi adicionado (ex: se tem 3 pontos, o último é o dot_3)
         const lastDotId = 'dot_' + pontosPoligonoAtual.length;
         
-        // Remove o ponto do array
         pontosPoligonoAtual.pop();
         
-        // Remove o pontinho visual da tela
         if (markersPlugin.getMarker(lastDotId)) {
           markersPlugin.removeMarker(lastDotId);
         }
 
-        // Se a área estiver desenhada, atualiza ou apaga
         if (markersPlugin.getMarker(tempPolygonId)) {
           if (pontosPoligonoAtual.length >= 3) {
-            markersPlugin.updateMarker({ id: tempPolygonId, polygon: pontosPoligonoAtual });
+            try { markersPlugin.updateMarker({ id: tempPolygonId, polygon: pontosPoligonoAtual }); } catch(e) {}
           } else {
             markersPlugin.removeMarker(tempPolygonId);
           }
@@ -255,9 +253,9 @@
     }
 
     window.finalizarPoligono = function(event) {
-      if(event) { event.preventDefault(); event.stopPropagation(); }
+      if(event) { event.stopPropagation(); }
       
-      if (!modoDesenho) return; // Impede clique duplo
+      if (!modoDesenho) return;
 
       if (pontosPoligonoAtual.length >= 3) {
         const markersPlugin = viewer.getPlugin(MarkersPlugin);
@@ -269,25 +267,27 @@
             svgStyle: { stroke: '#c5a059', strokeWidth: '3px', fill: 'rgba(197, 160, 89, 0.3)', pointerEvents: 'none' }
           });
           marcacoes.push({ id: poligonoId, type: 'poligono', polygon: pontosPoligonoAtual });
-        } catch (e) {
-          alert("Erro ao fechar o lote. As linhas não podem se cruzar.");
-        } finally {
+          
+          // Só limpa e desativa se der certo
           limparTemporarios();
           desativarModos();
+        } catch (e) {
+          console.error(e);
+          alert("As linhas se cruzaram. Use o botão Desfazer (laranja) para corrigir o último ponto.");
         }
       } else {
-        alert('Você precisa tocar em pelo menos 3 cantos para fechar.');
+        alert('Você precisa tocar em pelo menos 3 cantos.');
       }
     }
 
     window.cancelarDesenho = function(event) {
-      if(event) { event.preventDefault(); event.stopPropagation(); }
+      if(event) { event.stopPropagation(); }
       limparTemporarios();
       desativarModos();
     }
 
     window.apagarSelecionado = function(event) {
-      if(event) { event.preventDefault(); event.stopPropagation(); }
+      if(event) { event.stopPropagation(); }
       if (!selectedMarkerId) return;
 
       const markersPlugin = viewer.getPlugin(MarkersPlugin);
@@ -298,7 +298,7 @@
     }
 
     window.fecharPainelEdicao = function(event) {
-      if(event) { event.preventDefault(); event.stopPropagation(); }
+      if(event) { event.stopPropagation(); }
       document.getElementById('panel-edicao').style.display = 'none';
       selectedMarkerId = null;
     }
@@ -348,7 +348,7 @@
     }
 
     window.salvarTour = async function(event) {
-      if(event) { event.preventDefault(); event.stopPropagation(); }
+      if(event) { event.stopPropagation(); }
       const file = document.getElementById('foto').files[0];
       if (!file) return alert('Carregue uma foto primeiro.');
       if (marcacoes.length === 0) return alert('Adicione algo antes de salvar.');
@@ -378,7 +378,7 @@
     }
 
     window.copiarLink = function(event) {
-      if(event) { event.preventDefault(); event.stopPropagation(); }
+      if(event) { event.stopPropagation(); }
       const input = document.getElementById('linkTour');
       if (!input.value) return alert('Salve o tour primeiro.');
       navigator.clipboard.writeText(input.value);
