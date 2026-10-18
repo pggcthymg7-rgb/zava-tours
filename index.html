@@ -4,22 +4,28 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Zava Tour — Editor</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.css"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@photo-sphere-viewer/core@5.5.0/index.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@photo-sphere-viewer/markers-plugin@5.5.0/index.css" />
   <style>
     body { margin: 0; font-family: sans-serif; background: #0b0b0b; color: #fff; }
     header { padding: 12px 20px; background: #141414; border-bottom: 1px solid #2c2c2c; display: flex; justify-content: space-between; align-items: center; }
     header h1 { color: #c5a059; font-size: 18px; margin: 0; }
     .container { display: flex; height: calc(100vh - 60px); flex-direction: column; }
-    @media (min-width: 768px) { .container { flex-direction: row; } .sidebar { width: 300px; } #panorama { flex: 1; } }
-    .sidebar { background: #141414; padding: 16px; overflow-y: auto; }
+    @media (min-width: 768px) { .container { flex-direction: row; } .sidebar { width: 300px; } #viewer { flex: 1; } }
+    .sidebar { background: #141414; padding: 16px; overflow-y: auto; z-index: 10; }
     .sidebar button, .sidebar input { width: 100%; margin-bottom: 8px; padding: 10px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; box-sizing: border-box; }
     .btn-gold { background: #c5a059; color: #000; }
     .btn-outline { background: transparent; border: 1px solid #c5a059 !important; color: #fff; transition: 0.2s; }
     .btn-outline.ativo { background: rgba(197, 160, 89, 0.3); border: 2px solid #fff !important; }
-    #panorama { width: 100%; height: 50vh; background: #000; cursor: crosshair; }
-    @media (min-width: 768px) { #panorama { height: 100%; } }
+    #viewer { width: 100%; height: 50vh; background: #000; cursor: crosshair; }
+    @media (min-width: 768px) { #viewer { height: 100%; } }
     .hidden { display: none; }
-    .custom-hotspot { background: #c5a059; border: 2px solid #fff; border-radius: 50%; width: 20px; height: 20px; cursor: pointer; box-shadow: 0 0 15px rgba(197,160,89,0.9); }
+    
+    /* Estilo do marcador no PSV */
+    .custom-marker {
+      width: 24px; height: 24px; background: #c5a059; border: 2px solid #fff;
+      border-radius: 50%; box-shadow: 0 0 15px rgba(197,160,89,0.9); cursor: pointer;
+    }
   </style>
 </head>
 <body>
@@ -37,62 +43,79 @@
       <input type="text" id="linkTour" readonly placeholder="Ainda não salvo" style="background:#222; color:#fff; font-size:12px;">
       <button class="btn-outline" onclick="copiarLink()">🔗 Copiar link</button>
     </div>
-    <div id="panorama"></div>
+    <div id="viewer"></div>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.js"></script>
+  <!-- Novas Bibliotecas (Photo Sphere Viewer) -->
+  <script type="importmap">
+    {
+      "imports": {
+        "@photo-sphere-viewer/core": "https://cdn.jsdelivr.net/npm/@photo-sphere-viewer/core@5.5.0/index.js",
+        "@photo-sphere-viewer/markers-plugin": "https://cdn.jsdelivr.net/npm/@photo-sphere-viewer/markers-plugin@5.5.0/index.js"
+      }
+    }
+  </script>
   <script src="https://cdn.jsdelivr.net/npm/browser-image-compression@2.0.2/dist/browser-image-compression.js"></script>
-  <script>
-    let viewer = pannellum.viewer('panorama', {
-      type: 'equirectangular',
-      panorama: 'https://pannellum.org/images/alma.jpg',
-      autoLoad: true
-    });
-    configurarClique();
+  
+  <script type="module">
+    import { Viewer } from '@photo-sphere-viewer/core';
+    import { MarkersPlugin } from '@photo-sphere-viewer/markers-plugin';
 
+    let viewer;
     let marcacoes = [];
     let modoMarcacao = false;
+
+    function iniciarViewer(imagem) {
+      if (viewer) viewer.destroy();
+      
+      viewer = new Viewer({
+        container: 'viewer',
+        panorama: imagem,
+        plugins: [[MarkersPlugin, { markers: [] }]]
+      });
+
+      // Escuta o clique na tela do 360
+      viewer.addEventListener('click', ({ data }) => {
+        if (!modoMarcacao) return;
+        
+        const { yaw, pitch } = data;
+        const titulo = prompt('Título da marcação (ex: Lote 04, Portaria):');
+        
+        if (titulo) {
+          const id = 'marcador_' + Date.now();
+          const markersPlugin = viewer.getPlugin(MarkersPlugin);
+          
+          markersPlugin.addMarker({
+            id: id,
+            position: { yaw, pitch },
+            html: `<div class="custom-marker"></div>`,
+            tooltip: titulo,
+            anchor: 'center center'
+          });
+
+          marcacoes.push({ yaw, pitch, titulo });
+          desativarModoMarcacao();
+        }
+      });
+    }
+
+    // Inicia com a foto de exemplo
+    iniciarViewer('https://photo-sphere-viewer.js.org/assets/sphere.jpg');
 
     document.getElementById('foto').addEventListener('change', function(e) {
       const file = e.target.files[0];
       if (!file) return;
       const reader = new FileReader();
       reader.onload = function(ev) {
-        viewer.destroy();
-        viewer = pannellum.viewer('panorama', {
-          type: 'equirectangular',
-          panorama: ev.target.result,
-          autoLoad: true
-        });
-        configurarClique();
+        iniciarViewer(ev.target.result);
         marcacoes = [];
         desativarModoMarcacao();
       };
       reader.readAsDataURL(file);
     });
 
-    function configurarClique() {
-      viewer.on('mousedown', function(event) {
-        if (modoMarcacao) {
-          const coords = viewer.mouseEventToCoords(event);
-          if (coords) {
-            const pitch = coords[0];
-            const yaw = coords[1];
-            const titulo = prompt('Título da marcação (ex: Lote 04, Portaria):');
-            if (titulo) {
-              viewer.addHotSpot({ pitch: pitch, yaw: yaw, type: 'info', text: titulo, cssClass: 'custom-hotspot' });
-              marcacoes.push({ pitch, yaw, titulo });
-              desativarModoMarcacao();
-            }
-          }
-        }
-      });
-    }
-
-    function toggleModoMarcacao() {
-      if (!document.getElementById('foto').files[0]) {
-        return alert('Carregue uma foto primeiro.');
-      }
+    window.toggleModoMarcacao = function() {
+      if (!document.getElementById('foto').files[0]) return alert('Carregue uma foto primeiro.');
       modoMarcacao = !modoMarcacao;
       const btn = document.getElementById('btn-marcar');
       const instrucao = document.getElementById('instrucao');
@@ -115,7 +138,7 @@
       instrucao.style.display = 'none';
     }
 
-    async function salvarTour() {
+    window.salvarTour = async function() {
       const file = document.getElementById('foto').files[0];
       if (!file) return alert('Carregue uma foto primeiro.');
       if (marcacoes.length === 0) return alert('Adicione pelo menos uma marcação antes de salvar.');
@@ -158,7 +181,7 @@
       }
     }
 
-    function copiarLink() {
+    window.copiarLink = function() {
       const input = document.getElementById('linkTour');
       if (!input.value) return alert('Salve o tour primeiro.');
       navigator.clipboard.writeText(input.value);
