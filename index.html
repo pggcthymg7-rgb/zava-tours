@@ -5,18 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Zava Tour — Editor</title>
   
-  <!-- Polyfill para corrigir carregamento no Safari/iOS -->
-  <script async src="https://ga.jspm.io/npm:es-module-shims@1.10.0/dist/es-module-shims.js"></script>
-
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@photo-sphere-viewer/core@5.5.0/index.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@photo-sphere-viewer/markers-plugin@5.5.0/index.css" />
   <style>
-    body { margin: 0; font-family: sans-serif; background: #0b0b0b; color: #fff; }
-    header { padding: 12px 20px; background: #141414; border-bottom: 1px solid #2c2c2c; display: flex; justify-content: space-between; align-items: center; }
+    html, body { margin: 0; padding: 0; height: 100%; font-family: sans-serif; background: #0b0b0b; color: #fff; }
+    header { padding: 12px 20px; background: #141414; border-bottom: 1px solid #2c2c2c; display: flex; justify-content: space-between; align-items: center; position: relative; z-index: 10; }
     header h1 { color: #c5a059; font-size: 18px; margin: 0; }
-    .container { display: flex; height: calc(100vh - 60px); flex-direction: column; }
+    .container { display: flex; height: calc(100% - 60px); flex-direction: column; }
     @media (min-width: 768px) { .container { flex-direction: row; } .sidebar { width: 300px; } #viewer { flex: 1; } }
-    .sidebar { background: #141414; padding: 16px; overflow-y: auto; z-index: 10; }
+    .sidebar { background: #141414; padding: 16px; overflow-y: auto; position: relative; z-index: 10; }
     .sidebar button, .sidebar input { width: 100%; margin-bottom: 8px; padding: 10px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; box-sizing: border-box; }
     .btn-gold { background: #c5a059; color: #000; }
     .btn-outline { background: transparent; border: 1px solid #c5a059 !important; color: #fff; transition: 0.2s; }
@@ -24,10 +21,15 @@
     #viewer { width: 100%; height: 50vh; background: #000; cursor: crosshair; }
     @media (min-width: 768px) { #viewer { height: 100%; } }
     .hidden { display: none; }
+    
     .custom-marker { width: 24px; height: 24px; background: #c5a059; border: 2px solid #fff; border-radius: 50%; box-shadow: 0 0 15px rgba(197,160,89,0.9); cursor: pointer; }
+    
+    #erro { position: fixed; top: 0; left: 0; width: 100%; background: red; color: white; padding: 15px; z-index: 9999; display: none; font-weight: bold; text-align: center; }
   </style>
 </head>
 <body>
+  <div id="erro"></div>
+  
   <header><h1>❖ ZAVA TOUR — Editor</h1></header>
   <div class="container">
     <div class="sidebar">
@@ -48,16 +50,22 @@
   <script type="importmap">
     {
       "imports": {
-        "three": "https://cdn.jsdelivr.net/npm/three@0.163.0/build/three.module.js",
-        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.163.0/examples/jsm/",
-        "@photo-sphere-viewer/core": "https://cdn.jsdelivr.net/npm/@photo-sphere-viewer/core@5.5.0/index.js",
-        "@photo-sphere-viewer/markers-plugin": "https://cdn.jsdelivr.net/npm/@photo-sphere-viewer/markers-plugin@5.5.0/index.js"
+        "three": "https://esm.sh/three@0.163.0",
+        "three/addons/": "https://esm.sh/three@0.163.0/examples/jsm/",
+        "@photo-sphere-viewer/core": "https://esm.sh/@photo-sphere-viewer/core@5.5.0",
+        "@photo-sphere-viewer/markers-plugin": "https://esm.sh/@photo-sphere-viewer/markers-plugin@5.5.0"
       }
     }
   </script>
   <script src="https://cdn.jsdelivr.net/npm/browser-image-compression@2.0.2/dist/browser-image-compression.js"></script>
   
   <script type="module">
+    window.onerror = function(msg) {
+      const e = document.getElementById('erro');
+      e.style.display = 'block';
+      e.innerText = 'Erro no sistema: ' + msg;
+    };
+
     import { Viewer } from '@photo-sphere-viewer/core';
     import { MarkersPlugin } from '@photo-sphere-viewer/markers-plugin';
 
@@ -68,37 +76,42 @@
     function iniciarViewer(imagem) {
       if (viewer) viewer.destroy();
       
-      viewer = new Viewer({
-        container: 'viewer',
-        panorama: imagem,
-        plugins: [[MarkersPlugin, { markers: [] }]]
-      });
+      try {
+        viewer = new Viewer({
+          container: 'viewer',
+          panorama: imagem,
+          plugins: [[MarkersPlugin, { markers: [] }]]
+        });
 
-      viewer.addEventListener('click', ({ data }) => {
-        if (!modoMarcacao) return;
-        
-        const { yaw, pitch } = data;
-        const titulo = prompt('Título da marcação (ex: Lote 04, Portaria):');
-        
-        if (titulo) {
-          const id = 'marcador_' + Date.now();
-          const markersPlugin = viewer.getPlugin(MarkersPlugin);
+        viewer.addEventListener('click', ({ data }) => {
+          if (!modoMarcacao) return;
           
-          markersPlugin.addMarker({
-            id: id,
-            position: { yaw, pitch },
-            html: `<div class="custom-marker"></div>`,
-            tooltip: titulo,
-            anchor: 'center center'
-          });
+          const { yaw, pitch } = data;
+          const titulo = prompt('Título da marcação (ex: Lote 04, Portaria):');
+          
+          if (titulo) {
+            const id = 'marcador_' + Date.now();
+            const markersPlugin = viewer.getPlugin(MarkersPlugin);
+            
+            markersPlugin.addMarker({
+              id: id,
+              position: { yaw, pitch },
+              html: `<div class="custom-marker"></div>`,
+              tooltip: titulo,
+              anchor: 'center center'
+            });
 
-          marcacoes.push({ yaw, pitch, titulo });
-          desativarModoMarcacao();
-        }
-      });
+            marcacoes.push({ yaw, pitch, titulo });
+            desativarModoMarcacao();
+          }
+        });
+      } catch (err) {
+        document.getElementById('erro').style.display = 'block';
+        document.getElementById('erro').innerText = 'Erro ao iniciar visualizador: ' + err.message;
+      }
     }
 
-    iniciarViewer('https://pannellum.org/images/alma.jpg');
+    iniciarViewer('https://photo-sphere-viewer.js.org/assets/sphere.jpg');
 
     document.getElementById('foto').addEventListener('change', function(e) {
       const file = e.target.files[0];
