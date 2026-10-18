@@ -117,7 +117,7 @@
 
       viewer = new Viewer({
         container: 'viewer',
-        panorama: imagem,
+        panorama: if imagem,
         navbar: false,
         touchmoveTwoFingers: false,
         plugins: [[MarkersPlugin, { markers: [] }]]
@@ -131,7 +131,7 @@
         fecharPainelEdicao();
         const { yaw, pitch } = data;
         
-        if (modoPonto) {
+        (modoPonto) {
           const titulo = prompt('Título da marcação (ex: Portaria):');
           if (titulo) {
             const id = 'marcador_' + Date.now();
@@ -221,19 +221,21 @@
         const markersPlugin = viewer.getPlugin(MarkersPlugin);
         
         try {
-          // Cria a lista de pontos para a linha e adiciona o primeiro ponto no final para fechar o lote
-          const linePoints = pontosPoligonoAtual.map(p => ({yaw: p.yaw, pitch: p.pitch}));
-          linePoints.push({yaw: pontosPoligonoAtual[0].yaw, pitch: pontosPoligonoAtual[0].pitch}); 
+          // CORREÇÃO: Converte a lista de objetos {yaw, pitch} para uma lista de pares numéricos [yaw, pitch]
+          const linePoints = pontosPoligonoAtual.map(p => [p.yaw, p.pitch]);
+          // Adiciona o primeiro ponto ao final para fechar o lote
+          linePoints.push([pontosPoligonoAtual[0].yaw, pontosPoligonoAtual[0].pitch]); 
 
           const poligonoId = 'lote_' + Date.now();
           
-          // Desenha a linha SEM filtros de sombra que causam erro no iOS
+          // Desenha a linha no formato correto (array de arrays)
           markersPlugin.addMarker({
             id: poligonoId,
             polyline: linePoints, 
             svgStyle: { stroke: '#c5a059', strokeWidth: '4px' }
           });
           
+          // Salva os dados também no formato correto para o tour.html
           marcacoes.push({ id: poligonoId, type: 'poligono', polyline: linePoints });
           
           limparTemporarios();
